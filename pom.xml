@@ -218,7 +218,7 @@
                             <batch>true</batch> <!-- 非交互模式，核心 -->
                             <passphrase>${env.GPG_PASSPHRASE}</passphrase> <!-- 读取环境变量密码 -->
                             <useAgent>false</useAgent> <!-- 禁用 GPG 代理 -->
-                            <keyname>CFC409D32D6BF6D6510409B9330A6F46A8A29597</keyname> <!-- 标准密钥ID -->
+                            <keyname>330A6F46A8A29597</keyname> <!-- 标准密钥ID -->
                             <signatureAlgorithm>ED25519</signatureAlgorithm> <!-- 适配你的密钥算法 -->
                             <skip>false</skip>
                         </configuration>
