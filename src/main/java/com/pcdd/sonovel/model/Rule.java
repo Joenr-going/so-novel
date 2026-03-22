@@ -60,6 +60,7 @@ public class Rule {
         private String latestChapter;
         private String lastUpdateTime;
         private String status;
+        private BookStatus statusEnum;
     }
 
     @Data

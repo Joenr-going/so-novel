@@ -5,10 +5,10 @@ import cn.hutool.core.io.file.FileAppender;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HtmlUtil;
-import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.context.DownloadContext;
+import com.pcdd.sonovel.core.Defaults;
 import com.pcdd.sonovel.model.Rule.Book;
 import com.pcdd.sonovel.util.FileUtils;
-import lombok.AllArgsConstructor;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -17,22 +17,20 @@ import java.nio.charset.Charset;
  * @author pcdd
  * Created at 2024/12/4
  */
-@AllArgsConstructor
 public class TxtMergeHandler implements PostProcessingHandler {
-
-    private final AppConfig config;
 
     @Override
     public void handle(Book book, File saveDir) {
+        String basePath = DownloadContext.getOrDefault(Defaults.DOWNLOAD_PATH);
         String outputPath = StrUtil.format("{}{}({}).txt",
-                config.getDownloadPath() + File.separator, book.getBookName(), book.getAuthor());
+                basePath + File.separator, book.getBookName(), book.getAuthor());
         // 删除旧的同名 txt 文件
         FileUtil.del(outputPath);
         String absolutePath = FileUtils.toAbsolutePath(outputPath);
         File outputFile = FileUtil.touch(absolutePath);
 
         // 获取 TXT 编码，默认 UTF-8
-        Charset charset = CharsetUtil.parse(config.getTxtEncoding());
+        Charset charset = CharsetUtil.parse(Defaults.TXT_ENCODING);
 
         FileAppender appender = new FileAppender(outputFile, charset, 16, true);
 
