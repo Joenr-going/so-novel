@@ -5,16 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.pcdd</groupId>
+        <groupId>io.github.joenr-going</groupId>
         <artifactId>so-novel</artifactId>
-        <version>1.10.0</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>so-novel-core</artifactId>
     <packaging>jar</packaging>
     <name>so-novel-core</name>
     <description>纯 JVM 小说抓取核心库（JDK 17，Android 兼容）</description>
-    <url>https://github.com/freeok/so-novel</url>
+    <url>https://github.com/Joenr-going/so-novel</url>
     <licenses>
         <license>
             <name>GNU Affero General Public License v3.0</name>
@@ -23,15 +23,15 @@
         </license>
     </licenses>
     <scm>
-        <url>https://github.com/freeok/so-novel</url>
-        <connection>scm:git:https://github.com/freeok/so-novel.git</connection>
-        <developerConnection>scm:git:https://github.com/freeok/so-novel.git</developerConnection>
+        <url>https://github.com/Joenr-going/so-novel</url>
+        <connection>scm:git:https://github.com/Joenr-going/so-novel.git</connection>
+        <developerConnection>scm:git:https://github.com/Joenr-going/so-novel.git</developerConnection>
     </scm>
     <developers>
         <developer>
-            <id>pcdd</id>
-            <name>pcdd</name>
-            <url>https://github.com/freeok</url>
+            <id>Joenr-going</id>
+            <name>Joenr-going</name>
+            <url>https://github.com/Joenr-going</url>
         </developer>
     </developers>
 
