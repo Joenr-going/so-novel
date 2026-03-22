@@ -40,7 +40,7 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          VERSION=$(mvn -q -pl core -am -Dexec.skip=true -DskipTests -DforceStdout help:evaluate -Dexpression=project.version)
+          VERSION=$(mvn -q -Dexec.skip=true -DskipTests -DforceStdout help:evaluate -Dexpression=project.version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Fetch tags
@@ -50,7 +50,7 @@ jobs:
           echo "tags=$(git tag -l | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Build and deploy
-        run: mvn -pl core -am -DskipTests deploy
+        run: mvn -DskipTests deploy
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
