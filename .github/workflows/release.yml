@@ -50,7 +50,9 @@ jobs:
           echo "tags=$(git tag -l | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Build and deploy
-        run: mvn -DskipTests clean deploy  # 加 clean，清理旧文件
+        run: |
+          # 强制非交互
+          mvn -B -DskipTests -Dgpg.batch=true -Dgpg.passphrase=${GPG_PASSPHRASE} clean deploy -P release
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
