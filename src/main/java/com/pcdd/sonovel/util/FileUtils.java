@@ -52,9 +52,7 @@ public class FileUtils {
      * 替换文件名非法字符，仅用于文件名而非路径
      */
     public String sanitizeFileName(String fileName) {
-        String osName = System.getProperty("os.name").toLowerCase();
-
-        if (osName.contains("win")) {
+        if (PlatformUtils.isWindows()) {
             return fileName
                     .replace(':', '：')
                     .replace('*', '＊')
@@ -63,7 +61,7 @@ public class FileUtils {
                     .replace('<', '＜')
                     .replace('>', '＞')
                     .replaceAll("[/\\\\|]", "_");
-        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("mac")) {
+        } else if (PlatformUtils.isMac() || PlatformUtils.isLinux()) {
             return fileName
                     .replace('.', '。')
                     .replace(':', '：')
