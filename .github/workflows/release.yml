@@ -32,10 +32,10 @@ jobs:
           java-version: '17'
           cache: maven
           server-id: ossrh
-          server-username: ${{ secrets.OSSRH_USERNAME }}
-          server-password: ${{ secrets.OSSRH_PASSWORD }}
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpg-passphrase: GPG_PASSPHRASE
 
       - name: Resolve version
         id: version
