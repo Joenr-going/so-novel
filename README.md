@@ -1,215 +1,158 @@
-<div align="center">
-  <img src="assets/logo.png" style="width: 128px;"/>
-  <h1 align="center">So Novel</h1>
-  <h4 align="center"></h4>
-</div>
-
-<div align="center">
-
-[![zread](https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff)](https://zread.ai/freeok/so-novel)
-[![GitHub License](https://img.shields.io/github/license/freeok/so-novel?style=flat-square)](https://github.com/freeok/so-novel/blob/main/LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/freeok/so-novel)](https://github.com/freeok/so-novel/releases/latest)
-[![GitHub Downloads](https://img.shields.io/github/downloads/freeok/so-novel/total.svg?style=flat-square)](https://github.com/freeok/so-novel/releases/latest)
-
-</div>
-
 ## 概述
 
-**So Novel** 是一款通用的网页内容处理与导出工具，它致力于帮助用户高效地从网页中提取结构化信息，并将其灵活导出为
-EPUB、TXT、PDF 等多种标准电子文档格式。适用于学习采集、格式转换、电子书制作等场景。
+**So Novel Core** 是一个纯 JVM 的小说抓取核心库（JDK 17），可被其他项目作为 Maven 依赖直接集成调用。
 
-## 预览
+本仓库来源于 https://github.com/freeok/so-novel，如需直接阅读小说的 UI 界面与完整应用体验，请前往该源项目。
 
-<details>
-  <summary>点击查看图片</summary>
+本项目目的：将原工程拆分为可复用的核心库，便于在 Android/服务端等场景以依赖方式集成。
+移除 CLI/TUI/Web 交互层与打包脚本，保留核心抓取与解析能力；统一 JDK 17 与 Rhino JS 引擎。
 
-### TUI 预览 (Text-based User Interface)
+## Maven 依赖
 
-![preview-tui.png](assets/preview-tui.png)
-
-### WebUI 预览 (网页版)
-
-![preview-webui.png](assets/preview-webui.png)
-
-### CLI 预览 (Command Line Interface)
-
-![preview-cli.png](assets/preview-cli.png)
-
-</details>
-
-## 使用
-
-### 📦 普通安装
-
-1. 下载最新版 https://github.com/freeok/so-novel/releases
-2. 根据 [readme.txt](bundle%2Freadme.txt) 使用
-
-### 🍨 Scoop
-
-```bash
-scoop bucket add freeok https://github.com/freeok/scoop-bucket
-scoop install freeok/so-novel
+```xml
+<dependency>
+  <groupId>com.pcdd</groupId>
+  <artifactId>so-novel-core</artifactId>
+  <version>latest</version>
+</dependency>
 ```
 
-### 🍺 Homebrew
+## 快速开始
 
-```bash
-brew tap ownia/homebrew-ownia
-brew install so-novel
+```java
+AppConfig config = AppConfigLoader.APP_CONFIG;
+NovelService service = new NovelServiceImpl(config);
+
+List<SearchResult> results = service.search("玄鉴仙族");
+if (results.isEmpty()) {
+    return;
+}
+
+String bookUrl = results.get(0).getUrl();
+double seconds = service.download(bookUrl);
 ```
 
-### 🐧 Linux
+## API 用法
 
-```bash
-bash <(curl -sSL https://raw.githubusercontent.com/freeok/so-novel/main/bin/linux-install.sh)
+### 读取目录
+
+```java
+AppConfig config = AppConfigLoader.APP_CONFIG;
+NovelService service = new NovelServiceImpl(config);
+
+List<SearchResult> results = service.search("玄鉴仙族");
+List<Chapter> toc = service.fetchToc(results.get(0).getUrl());
 ```
 
-### 🐳 Docker
+### 下载全本
 
-**方式 1：脚本一键安装**
-
-```bash
-curl -sSL https://raw.githubusercontent.com/freeok/so-novel/main/bin/docker-install.sh | bash
+```java
+double totalSeconds = service.download(results.get(0).getUrl());
 ```
 
-**方式 2：Docker Compose**
+### 下载指定章节
 
-```yaml
-services:
-  sonovel:
-    image: ghcr.io/freeok/sonovel:latest
-    container_name: sonovel
-    ports:
-      - "7765:7765"
-    environment:
-      JAVA_OPTS: "-Dmode=web"
-    volumes:
-      - sonovel_data:/sonovel
-    restart: unless-stopped
-
-volumes:
-  sonovel_data:
+```java
+List<Chapter> toc = service.fetchToc(results.get(0).getUrl());
+Chapter[] part = toc.subList(0, Math.min(20, toc.size())).toArray(new Chapter[0]);
+double selectedSeconds = service.download(results.get(0).getUrl(), part);
 ```
 
-**方式 3：直接运行容器**
+### 以内存流获取 EPUB
 
-```bash
-# 如需挂载，请提前准备好 config.ini 文件、rules 目录
-docker run -d \
-  --name sonovel \
-  -v /sonovel/config.ini:/sonovel/config.ini \
-  -v /sonovel/rules:/sonovel/rules \
-  -v /sonovel/downloads:/sonovel/downloads \
-  -p 7765:7765 \
-  -e JAVA_OPTS='-Dmode=web' \
-  ghcr.io/freeok/sonovel:latest
+```java
+InputStream epub = service.fetch(results.get(0).getUrl());
 ```
 
-**方式 4：从源码构建镜像**
+## API 说明
 
-```bash
-# 确保已安装 git、maven
-# arch: [x64|arm64]
+### search(String keyword)
 
-# 构建项目
-git clone https://github.com/freeok/so-novel.git && cd so-novel
-sh bin/release-linux.sh [arch]
+- 参数
+  - keyword：书名或作者关键词
+- 返回值
+  - List<SearchResult>：聚合搜索结果列表
+- 说明
+  - 自动按已启用的书源并发搜索
+  - 当配置 searchFilter=1 时会做相似度过滤与排序
 
-# 构建 Docker 镜像
-cp -r target/sonovel-linux_[arch]/{app.jar,config.ini,rules} .
-docker build -t sonovel .
+### fetchToc(String bookUrl)
+
+- 参数
+  - bookUrl：书籍详情页 URL
+- 返回值
+  - List<Chapter>：目录章节列表
+- 说明
+  - 仅抓取目录，不下载正文
+
+### fetch(String bookUrl, Chapter... chapters)
+
+- 参数
+  - bookUrl：书籍详情页 URL
+  - chapters：可选章节列表，不传表示整本
+- 返回值
+  - InputStream：EPUB 二进制输入流
+
+### download(String bookUrl, Chapter... chapters)
+
+- 参数
+  - bookUrl：书籍详情页 URL
+  - chapters：可选章节列表，不传表示整本
+- 返回值
+  - double：总耗时（秒）
+
+## 配置示例
+
+```java
+AppConfig config = AppConfigLoader.APP_CONFIG;
+config.setLanguage("zh_cn");
+config.setActiveRules("main.json");
+config.setSearchLimit(20);
+config.setSearchFilter(1);
+config.setConcurrency(16);
+config.setMinInterval(200);
+config.setMaxInterval(400);
+config.setEnableRetry(1);
+config.setMaxRetries(5);
+config.setRetryMinInterval(2000);
+config.setRetryMaxInterval(4000);
+config.setProxyEnabled(0);
+config.setProxyHost("127.0.0.1");
+config.setProxyPort(7890);
+config.setSourceId(-1);
 ```
 
-> [!TIP]
->
-> 为获得最佳阅读体验，建议使用以下电子书阅读器：
->
-> **桌面端**
->
-> - [Readest](https://readest.com/)
-> - [Koodo Reader](https://www.koodoreader.com/zh)
-> - [Calibre](https://calibre-ebook.com/)
-> - [Neat Reader（网页版）](https://www.neat-reader.cn/webapp)
->
-> **移动端**
->
-> - [Readest](https://readest.com/)
-> - [Apple Books](https://www.apple.com/apple-books/)
-> - [Moon+ Reader（静读天下）](https://moondownload.com/chinese.html)
-> - [Kindle](https://apps.apple.com/us/app/amazon-kindle/id302584613)
->
-> 如需转换为其它电子书格式，可使用：
->
-> - [FreeConvert](https://www.freeconvert.com/zh)
-> - [Calibre](https://calibre-ebook.com/zh_CN)
-> 
-> 修复 WPS、掌阅等软件无法打开 so-novel 下载的 EPUB：https://github.com/freeok/so-novel/discussions/199
+## 配置说明
 
-## 自定义 JVM 系统属性
+### 全局
 
-| 参数            | 说明                     | 默认值          |
-|---------------|------------------------|--------------|
-| -Dconfig.file | 配置文件路径                 | ./config.ini |
-| -Dmode        | 启动模式，可选值：tui\|cli\|web | tui          |
+- ghProxy：GitHub 下载代理前缀（保留字段）
+- cfBypass：Cloudflare 绕过服务地址
 
-用法
+### 书源
 
-> [!NOTE]
->
-> Windows 修改 [sonovel.l4j.ini](bundle/sonovel.l4j.ini)
->
-> Linux 修改  [run-linux.sh](bundle/run-linux.sh)
->
-> macOS 修改  [run-macos.sh](bundle/run-macos.sh)
+- language：目标语言（zh_cn/zh_tw/zh_hant）
+- activeRules：激活的规则文件名
+- sourceId：指定书源 ID（-1 表示不限定）
+- searchLimit：搜索结果数量上限（-1 表示不限制）
+- searchFilter：是否对搜索结果做相似度过滤与排序（1 开启）
 
-## 使用本地 JDK / JRE 启动
+### 抓取
 
-如果你不想使用内置 JRE（runtime 目录），可以通过本地 JDK / JRE 启动程序
+- concurrency：下载并发数（-1 表示自动）
+- minInterval：请求最小间隔（毫秒）
+- maxInterval：请求最大间隔（毫秒）
+- enableRetry：是否启用重试（1 开启）
+- maxRetries：最大重试次数
+- retryMinInterval：重试最小间隔（毫秒）
+- retryMaxInterval：重试最大间隔（毫秒）
 
-Windows 使用脚本 start-custom-jre.cmd：
+### Cookie
 
-```cmd
-REM --------------------------------------------------
-REM 高级用户使用自定义 JRE 启动程序
-REM 将 "your_path\java.exe" 替换为你的 JRE 路径，例如：
-REM "C:\Java\jdk-21\bin\java.exe"
-REM --------------------------------------------------
-@echo off
-your_path\java.exe ^
-  -XX:+UseZGC ^
-  -XX:+ZGenerational ^
-  -Dconfig.file=config.ini ^
-  -Dmode=tui ^
-  -Dfile.encoding=GBK|Big5 ^
-  -jar app.jar
-```
+- qidianCookie：起点 Cookie，用于部分站点请求
 
-Linux / macOS：[run-linux.sh](bundle/run-linux.sh) / [run-macos.sh](bundle/run-macos.sh) 修改 java 路径
+### 代理
 
-## 常见问题
-
-https://github.com/freeok/so-novel/issues?q=label%3A%22usage%20question%22
-
-## 讨论
-
-https://github.com/freeok/so-novel/discussions?discussions_q=
-
-## 支持 & 赞助
-
-如果觉得有所帮助，欢迎扫码赞助☕、点击项目主页顶部的⭐Star 按钮支持！
-
-🚀这将是我们持续更新的动力源泉！同时，你也能第一时间获取到最新的更新动态。💡❤️
-
-| 支付宝赞助                                                           | 微信赞助                                                           |
-|-----------------------------------------------------------------|----------------------------------------------------------------|
-| <img src="assets/donation-alipay.png" alt="支付宝收款码" width="197"> | <img src="assets/donation-wechat.jpg" alt="微信赞赏码" width="197"> |
-
-[项目赞助者列表](./SPONSORS.md)
-
-## 免责声明
-
-在使用本工具前，请务必仔细阅读我们的[法律免责声明](bundle/DISCLAIMER.md)。使用本工具即表示您已阅读、理解并同意遵守所有条款。
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=freeok/so-novel&type=Date)](https://star-history.com/#freeok/so-novel&Date)
+- proxyEnabled：是否启用代理（1 开启）
+- proxyHost：代理主机
+- proxyPort：代理端口

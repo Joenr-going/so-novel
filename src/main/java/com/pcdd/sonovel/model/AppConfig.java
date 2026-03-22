@@ -10,17 +10,8 @@ import lombok.Data;
 public class AppConfig {
 
     private String version;
-
-    // [global]
-    private Integer autoUpdate;
     private String ghProxy;
     private String cfBypass;
-
-    // [download]
-    private String downloadPath;
-    private String extName;
-    private String txtEncoding;
-    private Integer preserveChapterCache;
 
     // [source]
     private String language;
@@ -37,10 +28,6 @@ public class AppConfig {
     private Integer maxRetries;
     private Integer retryMinInterval;
     private Integer retryMaxInterval;
-
-    // [web]
-    private Integer webEnabled;
-    private Integer webPort;
 
     // [cookie]
     private String qidianCookie;

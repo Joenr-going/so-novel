@@ -21,7 +21,7 @@ public class VirtualThreadLimiter implements AutoCloseable {
 
     public VirtualThreadLimiter(int maxConcurrent) {
         this.semaphore = new Semaphore(maxConcurrent);
-        this.executor = Executors.newVirtualThreadPerTaskExecutor();
+        this.executor = Executors.newFixedThreadPool(maxConcurrent);
     }
 
     /**

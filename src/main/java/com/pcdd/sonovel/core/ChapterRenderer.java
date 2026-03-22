@@ -31,9 +31,9 @@ public class ChapterRenderer {
         String content = new ChapterFormatter(config).format(filtered.getContent());
 
         chapter.setTitle(filtered.getTitle());
-        chapter.setContent(switch (config.getExtName()) {
+        chapter.setContent(switch (Defaults.EXT_NAME) {
             case "txt" -> renderTxtFormat(filtered.getTitle(), content);
-            case "epub", "html", "pdf" -> renderTemplateFormat(filtered.getTitle(), content, config.getExtName());
+            case "epub", "html", "pdf" -> renderTemplateFormat(filtered.getTitle(), content, Defaults.EXT_NAME);
             default -> content;
         });
         return chapter;
