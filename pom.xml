@@ -189,7 +189,28 @@
                             </goals>
                         </execution>
                     </executions>
+                    <configuration>
+                        <batch>true</batch>          <!-- 无交互模式 -->
+                        <armor>false</armor>         <!-- 禁用ASCII装甲 -->
+                        <useAgent>false</useAgent>   <!-- 不使用GPG代理 -->
+                        <passphraseServerId>ossrh</passphraseServerId>  <!-- 与server-id一致 -->
+                        <defaultKey>CFC409D32D6BF6D6510409B9330A6F46A8A29597</defaultKey>  <!-- 显式指定密钥ID -->
+                        <!-- 兼容ED25519算法（若用RSA可省略） -->
+                        <signatureAlgorithm>ED25519</signatureAlgorithm>
+                    </configuration>
                 </plugin>
+                <!-- Nexus 自动发布 -->
+                <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.13</version>
+          <extensions>true</extensions>
+          <configuration>
+            <serverId>ossrh</serverId>
+            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          </configuration>
+        </plugin>
         </plugins>
 
         <resources>
