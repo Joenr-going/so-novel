@@ -1,7 +1,6 @@
 package com.pcdd.sonovel.parse;
 
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.pcdd.sonovel.context.HttpClientContext;
@@ -14,13 +13,14 @@ import com.pcdd.sonovel.model.Rule;
 import com.pcdd.sonovel.util.ChineseConverter;
 import com.pcdd.sonovel.util.CrawlUtils;
 import com.pcdd.sonovel.util.JsoupUtils;
-import com.pcdd.sonovel.util.LogUtils;
 import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 
@@ -29,6 +29,8 @@ import java.io.InputStream;
  * Created at 2024/3/27
  */
 public class ChapterParser extends Source {
+
+    private static final Logger log = LoggerFactory.getLogger(ChapterParser.class);
 
     private final OkHttpClient httpClient = HttpClientContext.get();
     private final ChapterRenderer chapterRenderer;
@@ -41,7 +43,7 @@ public class ChapterParser extends Source {
     public Chapter parse(Chapter chapter) {
         try {
             long interval = CrawlUtils.randomInterval(config);
-            LogUtils.info("正在下载: 【{}】 间隔 {} ms", chapter.getTitle(), interval);
+            log.info("正在下载: 【{}】 间隔 {} ms", chapter.getTitle(), interval);
 
             String content = fetchContent(chapter.getUrl(), interval);
             chapter.setContent(content);
@@ -52,8 +54,8 @@ public class ChapterParser extends Source {
         } catch (Exception e) {
             // 中断下载，不重试
             if (config.getEnableRetry() == 0) {
-                Console.error(e, "【{}】章节下载出错。因未启用重试，故中断下载", chapter.getTitle());
-                System.exit(1);
+                log.error("【{}】章节下载出错。因未启用重试，故中断下载", chapter.getTitle(), e);
+                return null;
             }
             Chapter retryChapter = retry(chapter, e);
             return retryChapter == null ? null : ChineseConverter.convert(retryChapter, this.rule.getLanguage(), config.getLanguage());
@@ -65,20 +67,20 @@ public class ChapterParser extends Source {
             try {
                 // 重试间隔递增
                 long interval = CrawlUtils.randomInterval(config, true) * attempt;
-                LogUtils.warn("【{}】下载失败，正在重试。重试次数: {}/{} 重试间隔: {} ms 原因: {}",
+                log.warn("【{}】下载失败，正在重试。重试次数: {}/{} 重试间隔: {} ms 原因: {}",
                         chapter.getTitle(), attempt, config.getMaxRetries(), interval, ex.getMessage());
 
                 String content = fetchContent(chapter.getUrl(), interval);
                 chapter.setContent(content);
 
-                LogUtils.info("✅ 重试成功: 【{}】", chapter.getTitle());
+                log.info("✅ 重试成功: 【{}】", chapter.getTitle());
                 return chapterRenderer.process(chapter);
 
             } catch (Exception e) {
-                LogUtils.warn("第 {} 次重试失败: 【{}】 原因: {}", attempt, chapter.getTitle(), e.getMessage());
+                log.warn("第 {} 次重试失败: 【{}】 原因: {}", attempt, chapter.getTitle(), e.getMessage());
                 // 最终失败时记录日志
                 if (attempt == config.getMaxRetries()) {
-                    LogUtils.error(e, "❌ 下载失败章节: 【{}】({})\t原因: {}", chapter.getTitle(), chapter.getUrl(), e.getMessage());
+                    log.error("❌ 下载失败章节: 【{}】({})\t原因: {}", chapter.getTitle(), chapter.getUrl(), e.getMessage(), e);
                 }
             }
         }
@@ -155,7 +157,7 @@ public class ChapterParser extends Source {
     private Document handleCloudflareBypass(Document doc, String url) {
         if (CrawlUtils.hasCf(doc)) {
             Assert.isTrue(StrUtil.isNotEmpty(config.getCfBypass()), "🤖 检测到章节页 {} 存在 Cloudflare 真人验证，但未设置 cf-bypass 配置项，故跳过", url);
-            LogUtils.info("🤖 检测到章节页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", url);
+            log.info("🤖 检测到章节页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", url);
             String html = HttpUtil.get("%s/html?url=%s".formatted(this.config.getCfBypass(), url));
             doc = Jsoup.parse(html);
         }
@@ -168,7 +170,7 @@ public class ChapterParser extends Source {
             return JsoupUtils.selectAndInvokeJs(doc, r.getNextPageInJs(), ContentType.HTML);
         }
         if (nextEls.isEmpty()) {
-            LogUtils.error("分页章节正文获取为空，可能被限流！出错链接: {} 链接内容:\n{}\n", doc.baseUri(), doc);
+            log.error("分页章节正文获取为空，可能被限流！出错链接: {} 链接内容:\n{}\n", doc.baseUri(), doc);
             return null;
         }
         // 从按钮获取下一页链接

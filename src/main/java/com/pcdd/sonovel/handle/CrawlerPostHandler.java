@@ -1,14 +1,14 @@
 package com.pcdd.sonovel.handle;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
 import com.pcdd.sonovel.context.BookContext;
-import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.core.Defaults;
 import com.pcdd.sonovel.model.Rule.Book;
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Set;
@@ -17,25 +17,23 @@ import java.util.Set;
  * @author pcdd
  * Created at 2024/3/17
  */
-@AllArgsConstructor
 public class CrawlerPostHandler {
-
-    private final AppConfig config;
+    private static final Logger log = LoggerFactory.getLogger(CrawlerPostHandler.class);
     private static final Set<String> EXTENSIONS = Set.of("txt", "epub", "html", "pdf");
 
     @SneakyThrows
     public void handle(File saveDir) {
         Book book = BookContext.get();
-        String extName = config.getExtName();
+        String extName = Defaults.EXT_NAME;
         StringBuilder s = new StringBuilder(StrUtil.format("<== 章节下载完毕《{}》({})，", book.getBookName(), book.getAuthor()));
 
         if (EXTENSIONS.contains(extName.toLowerCase())) {
             s.append("正在生成 ").append(extName.toUpperCase());
         }
         if ("txt".equals(extName)) {
-            s.append(" (%s 编码)".formatted(CharsetUtil.parse(config.getTxtEncoding())));
+            s.append(" (%s 编码)".formatted(CharsetUtil.parse(Defaults.TXT_ENCODING)));
         }
-        Console.log(s.append("..."));
+        log.info(s.append("...").toString());
 
         // 等待文件系统更新索引
         int attempts = 10;
@@ -44,9 +42,9 @@ public class CrawlerPostHandler {
             attempts--;
         }
 
-        PostHandlerFactory.getHandler(extName, config).handle(book, saveDir);
+        PostHandlerFactory.getHandler(extName).handle(book, saveDir);
 
-        if (EXTENSIONS.contains(extName.toLowerCase()) && config.getPreserveChapterCache() == 0) {
+        if (EXTENSIONS.contains(extName.toLowerCase())) {
             FileUtil.del(saveDir);
         }
     }

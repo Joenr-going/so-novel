@@ -4,332 +4,194 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.pcdd</groupId>
+    <groupId>io.github.joenr-going</groupId>
     <artifactId>so-novel</artifactId>
-    <version>1.10.0</version>
-    <packaging>jar</packaging>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
 
     <name>so-novel</name>
-    <url>https://github.com/freeok/so-novel</url>
-    <description>交互式网络小说下载器</description>
+    <url>https://github.com/Joenr-going/so-novel</url>
+    <description>小说阅读</description>
     <inceptionYear>2021</inceptionYear>
     <organization>
-        <name>freeok</name>
-        <url>https://github.com/freeok/</url>
+        <name>Joenr-going</name>
+        <url>https://github.com/Joenr-going/</url>
     </organization>
+    <licenses>
+        <license>
+            <name>GNU Affero General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/agpl-3.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/Joenr-going/so-novel</url>
+        <connection>scm:git:https://github.com/Joenr-going/so-novel.git</connection>
+        <developerConnection>scm:git:https://github.com/Joenr-going/so-novel.git</developerConnection>
+    </scm>
+
+    <modules>
+        <module>core</module>
+    </modules>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <lombok.version>1.18.42</lombok.version>
-        <javet.version>5.0.5</javet.version>
-        <jetty.version>12.1.7</jetty.version>
         <junit.version>6.0.3</junit.version>
+        <rhino.version>1.7.15</rhino.version>
+        <slf4j.version>2.0.16</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.22.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp-jvm</artifactId>
-            <version>5.3.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.documentnode</groupId>
-            <artifactId>epub4j-core</artifactId>
-            <version>4.2.2</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.openhtmltopdf</groupId>
-            <artifactId>openhtmltopdf-pdfbox</artifactId>
-            <version>1.1.31</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-            <version>2.3.34</version>
-        </dependency>
-        <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>2.4.2</version>
-        </dependency>
-        <dependency>
-            <groupId>me.tongfei</groupId>
-            <artifactId>progressbar</artifactId>
-            <version>0.10.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hankcs</groupId>
-            <artifactId>hanlp</artifactId>
-            <version>portable-1.8.6</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>5.8.43</version>
-        </dependency>
-        <!-- JS Runtime -->
-        <dependency>
-            <groupId>com.caoccao.javet</groupId>
-            <artifactId>javet</artifactId>
-            <version>${javet.version}</version>
-        </dependency>
-        <!-- CLI -->
-        <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli</artifactId>
-            <version>4.7.7</version>
-        </dependency>
-        <!-- Servlet 容器 -->
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty.ee11</groupId>
-            <artifactId>jetty-ee11-servlet</artifactId>
-            <version>${jetty.version}</version>
-        </dependency>
-    </dependencies>
-
-    <!-- 根据平台打包 V8 -->
-    <profiles>
-        <profile>
-            <id>windows-x64</id>
-            <activation>
-                <os>
-                    <family>Windows</family>
-                    <arch>x86_64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.caoccao.javet</groupId>
-                    <artifactId>javet-v8-windows-x86_64</artifactId>
-                    <version>${javet.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>linux-x64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <name>Linux</name>
-                    <arch>x86_64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.caoccao.javet</groupId>
-                    <artifactId>javet-v8-linux-x86_64</artifactId>
-                    <version>${javet.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>linux-arm64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <name>Linux</name>
-                    <arch>arm64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.caoccao.javet</groupId>
-                    <artifactId>javet-v8-linux-arm64</artifactId>
-                    <version>${javet.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>macos-x64</id>
-            <activation>
-                <os>
-                    <family>mac</family>
-                    <arch>x86_64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.caoccao.javet</groupId>
-                    <artifactId>javet-v8-macos-x86_64</artifactId>
-                    <version>${javet.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>macos-arm64</id>
-            <activation>
-                <os>
-                    <family>mac</family>
-                    <arch>aarch64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>com.caoccao.javet</groupId>
-                    <artifactId>javet-v8-macos-arm64</artifactId>
-                    <version>${javet.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.22.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp-jvm</artifactId>
+                <version>5.3.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.documentnode</groupId>
+                <artifactId>epub4j-core</artifactId>
+                <version>4.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.openhtmltopdf</groupId>
+                <artifactId>openhtmltopdf-pdfbox</artifactId>
+                <version>1.1.31</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>2.3.34</version>
+            </dependency>
+            <dependency>
+                <groupId>com.hankcs</groupId>
+                <artifactId>hanlp</artifactId>
+                <version>portable-1.8.6</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>5.8.43</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mozilla</groupId>
+                <artifactId>rhino</artifactId>
+                <version>${rhino.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-jdk14</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
-        <plugins>
-            <!-- 指定编译使用的 JDK 版本、字符编码、编译参数等 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.15.0</version>
-                <configuration>
-                    <release>${java.version}</release>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <!--
-            maven-jar-plugin: 打包生成的 jar，只包含该工程下源码编译结果，不包含依赖内容
-            maven-assembly-plugin: 将所有外部库打包进 jar
-            -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.1</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.pcdd.sonovel.Main</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <!-- 表示将项目的编译结果和依赖库打包到一个 JAR 文件中 -->
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <finalName>app</finalName>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <!-- https://mvnrepository.com/artifact/com.akathist.maven.plugins.launch4j/launch4j-maven-plugin -->
-                <groupId>com.akathist.maven.plugins.launch4j</groupId>
-                <artifactId>launch4j-maven-plugin</artifactId>
-                <version>2.7.0</version>
-                <executions>
-                    <execution>
-                        <id>launch4j-exe</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>launch4j</goal>
-                        </goals>
-                        <!-- https://launch4j.sourceforge.net/docs.html#Configuration_file -->
-                        <configuration>
-                            <!-- 运行方式 gui|console|jniGui32|jniConsole32 -->
-                            <headerType>console</headerType>
-                            <!-- 可选，默认为 false。Launch4j 默认将 jar 文件打包到原生可执行文件中，您可以通过将<dontWrapJar>设置为 true 来禁用此功能。该 exe 文件将充当启动器，并启动 <jar>或<classPath><mainClass>中指定的应用程序。 -->
-                            <dontWrapJar>true</dontWrapJar>
-                            <jar>app.jar</jar>
-                            <outfile>target/SoNovel/sonovel.exe</outfile>
-                            <icon>assets/logo.ico</icon>
-                            <errTitle>SoNovel</errTitle>
-                            <!-- 崩溃时重新启动 -->
-                            <restartOnCrash>false</restartOnCrash>
-                            <classPath>
-                                <mainClass>com.pcdd.sonovel.Main</mainClass>
-                                <addDependencies>true</addDependencies>
-                                <preCp>anything</preCp>
-                            </classPath>
-                            <jre>
-                                <!-- JRE 目录，仅限 mvn 构建前指定 -DjrePath=runtime -->
-                                <path>${jrePath}</path>
-                                <minVersion>21</minVersion>
-                            </jre>
-                            <!-- Windows 资源管理器显示的可选版本信息 -->
-                            <versionInfo>
-                                <!-- 中文会乱码，待解决 -->
-                                <fileDescription>SoNovel</fileDescription>
-                                <copyright>Copyright (C) 2021-2025 SoNovel. All rights reserved.</copyright>
-                                <!-- 中文会乱码，待解决 -->
-                                <productName>SoNovel</productName>
-                                <companyName>github.com/freeok</companyName>
-                                <internalName>SoNovel</internalName>
-                                <originalFilename>sonovel.exe</originalFilename>
-                                <trademarks>SoNovel</trademarks>
-                                <language>SIMPLIFIED_CHINESE</language>
-                            </versionInfo>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- 在终端运行项目 -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <mainClass>com.pcdd.sonovel.Main</mainClass>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <propertiesEncoding>UTF-8</propertiesEncoding>
-                </configuration>
-            </plugin>
-        </plugins>
-
-        <resources>
-            <!-- resources 的文件用 @..@ 获取 pom.xml 的 properties -->
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.15.0</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <configuration>
+                        <propertiesEncoding>UTF-8</propertiesEncoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <!-- Javadoc 打包 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.6.3</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <!-- GPG 签名 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>

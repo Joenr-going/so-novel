@@ -1,6 +1,5 @@
 package com.pcdd.sonovel.core;
 
-import cn.hutool.core.lang.Console;
 import com.pcdd.sonovel.model.AppConfig;
 import com.pcdd.sonovel.util.EnvUtils;
 import lombok.SneakyThrows;
@@ -8,6 +7,8 @@ import lombok.experimental.UtilityClass;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 @UtilityClass
 public class OkHttpClientFactory {
 
+    public final Logger log = LoggerFactory.getLogger(OkHttpClientFactory.class);
     public final int TIMEOUT = 10;
 
     public OkHttpClient create() {
@@ -43,9 +45,6 @@ public class OkHttpClientFactory {
      */
     @SneakyThrows
     public OkHttpClient create(AppConfig config, boolean unsafe) {
-        if (EnvUtils.isDev()) {
-            Console.log("com.pcdd.sonovel.core.OkHttpClientFactory#create (unsafe=%s)".formatted(unsafe));
-        }
 
         OkHttpClient.Builder builder = baseBuilder(config);
 

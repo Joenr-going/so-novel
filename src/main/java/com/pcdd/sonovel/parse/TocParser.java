@@ -2,7 +2,6 @@ package com.pcdd.sonovel.parse;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.lang.Opt;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.ReUtil;
@@ -24,16 +23,25 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.pcdd.sonovel.model.ContentType.ATTR_HREF;
 import static com.pcdd.sonovel.model.ContentType.ATTR_VALUE;
 
 public class TocParser extends Source {
 
+    private static final Logger log = LoggerFactory.getLogger(TocParser.class);
     public final OkHttpClient httpClient = HttpClientContext.get();
 
     public TocParser(AppConfig config) {
@@ -128,7 +136,7 @@ public class TocParser extends Source {
     private Document handleCloudflareBypass(Document document, String nextUrl) {
         if (CrawlUtils.hasCf(document)) {
             Assert.isTrue(StrUtil.isNotEmpty(config.getCfBypass()), "🤖 检测到目录页 {} 存在 Cloudflare 真人验证，但未设置 cf-bypass 配置项，故跳过", nextUrl);
-            Console.log("🤖 检测到目录页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", nextUrl);
+            log.info("🤖 检测到目录页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", nextUrl);
             String realHtml = HttpUtil.get("%s/html?url=%s".formatted(this.config.getCfBypass(), nextUrl));
             document = Jsoup.parse(realHtml);
         }
@@ -141,39 +149,32 @@ public class TocParser extends Source {
     @SneakyThrows
     private List<Chapter> parseToc(Set<String> urls, int start, int end, Rule.Toc r) {
         List<Chapter> toc = new TocList();
-        int orderNumber = 1;
-
-        // TODO 多线程优化
+        Map<String, List<Chapter>> parts = new ConcurrentHashMap<>();
+        int poolSize = Math.min(urls.size(), Math.max(1, Runtime.getRuntime().availableProcessors()));
+        ExecutorService executor = Executors.newFixedThreadPool(poolSize);
+        CountDownLatch latch = new CountDownLatch(urls.size());
         for (String url : urls) {
-            Document document;
-            try (Response resp = CrawlUtils.request(httpClient, url, r.getTimeout());
-                 InputStream is = resp.body().byteStream()) {
-                // null 表示自动检测编码
-                document = Jsoup.parse(is, null, this.rule.getToc().getBaseUri());
-            }
-
-            document = handleCloudflareBypass(document, url);
-
-            // TODO rule.toc.item 实现 JS 语法，在此调用比 addChapter 性能更好
-            List<Element> elements;
-            // 处理 ul
-            if (StrUtil.isNotEmpty(r.getList())) {
-                String tocHtml = JsoupUtils.selectAndInvokeJs(document, r.getList(), ContentType.HTML);
-                Document tocDocument = Jsoup.parse(tocHtml);
-                elements = JsoupUtils.select(tocDocument, r.getItem());
-            } else { // 处理 ul > li > a
-                elements = JsoupUtils.select(document, r.getItem());
-            }
-
-            int minIndex = Math.min(end, elements.size());
-            if (r.isDesc()) {
-                for (int i = minIndex - 1; i >= start - 1; i--) {
-                    addChapter(elements.get(i), toc, orderNumber++, r);
+            executor.execute(() -> {
+                try {
+                    parts.put(url, parseTocPage(url, start, end, r));
+                } finally {
+                    latch.countDown();
                 }
-            } else {
-                for (int i = start - 1; i < minIndex; i++) {
-                    addChapter(elements.get(i), toc, orderNumber++, r);
-                }
+            });
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            executor.shutdown();
+        }
+        int orderNumber = 1;
+        for (String url : urls) {
+            List<Chapter> list = parts.getOrDefault(url, List.of());
+            for (Chapter chapter : list) {
+                chapter.setOrder(orderNumber++);
+                toc.add(chapter);
             }
         }
 
@@ -182,12 +183,41 @@ public class TocParser extends Source {
         return toc;
     }
 
-    private void addChapter(Element el, List<Chapter> toc, int order, Rule.Toc r) {
-        toc.add(Chapter.builder()
+    @SneakyThrows
+    private List<Chapter> parseTocPage(String url, int start, int end, Rule.Toc r) {
+        Document document;
+        try (Response resp = CrawlUtils.request(httpClient, url, r.getTimeout());
+             InputStream is = resp.body().byteStream()) {
+            document = Jsoup.parse(is, null, this.rule.getToc().getBaseUri());
+        }
+        document = handleCloudflareBypass(document, url);
+        List<Element> elements;
+        if (StrUtil.isNotEmpty(r.getList())) {
+            String tocHtml = JsoupUtils.selectAndInvokeJs(document, r.getList(), ContentType.HTML);
+            Document tocDocument = Jsoup.parse(tocHtml);
+            elements = JsoupUtils.select(tocDocument, r.getItem());
+        } else {
+            elements = JsoupUtils.select(document, r.getItem());
+        }
+        int minIndex = Math.min(end, elements.size());
+        List<Chapter> chapters = new ArrayList<>();
+        if (r.isDesc()) {
+            for (int i = minIndex - 1; i >= start - 1; i--) {
+                chapters.add(buildChapter(elements.get(i), r));
+            }
+        } else {
+            for (int i = start - 1; i < minIndex; i++) {
+                chapters.add(buildChapter(elements.get(i), r));
+            }
+        }
+        return chapters;
+    }
+
+    private Chapter buildChapter(Element el, Rule.Toc r) {
+        return Chapter.builder()
                 .title(el.text())
                 .url(JsoupUtils.getStrAndInvokeJs(el, r.getNextPage(), ATTR_HREF))
-                .order(order)
-                .build());
+                .build();
     }
 
 }

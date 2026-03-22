@@ -3,7 +3,6 @@ package com.pcdd.sonovel.util;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.lang.ConsoleTable;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
@@ -21,16 +20,20 @@ import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-
-import static org.fusesource.jansi.AnsiRenderer.render;
 
 /**
  * @author pcdd
@@ -39,6 +42,7 @@ import static org.fusesource.jansi.AnsiRenderer.render;
 @UtilityClass
 public class SourceUtils {
 
+    private final Logger log = LoggerFactory.getLogger(SourceUtils.class);
     public final String META_BOOK_NAME = "meta[property=\"og:novel:book_name\"]";
     public final String META_AUTHOR = "meta[property=\"og:novel:author\"]";
     public final String META_INTRO = "meta[name=\"description\"]";
@@ -194,7 +198,11 @@ public class SourceUtils {
     @SneakyThrows
     public List<SourceInfo> getActivatedSourcesWithAvailabilityCheck() {
         List<Rule> rules = SourceUtils.getActivatedRules();
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        if (rules.isEmpty()) {
+            return new ArrayList<>();
+        }
+        int poolSize = Math.min(rules.size(), Math.max(1, Runtime.getRuntime().availableProcessors()));
+        ExecutorService executor = Executors.newFixedThreadPool(poolSize);
         CompletionService<SourceInfo> completionService = new ExecutorCompletionService<>(executor);
         OkHttpClient client = OkHttpClientFactory.create(APP_CONFIG);
 
@@ -223,7 +231,7 @@ public class SourceUtils {
                     source.setDelay(-1);
                     source.setCode(-1);
                     if (EnvUtils.isDev()) {
-                        Console.error(render("书源 {} ({}) 测试连通性异常：{}", "red"), r.getId(), r.getName(), e.getMessage());
+                        log.warn("书源 {} ({}) 测试连通性异常：{}", r.getId(), r.getName(), e.getMessage());
                     }
                 }
 
@@ -262,7 +270,7 @@ public class SourceUtils {
                         e.getUrl(),
                         e.isDisabled() ? "禁用" : "启用"
                 ));
-        Console.table(asciiTables);
+        log.info("\n{}", asciiTables);
     }
 
 }

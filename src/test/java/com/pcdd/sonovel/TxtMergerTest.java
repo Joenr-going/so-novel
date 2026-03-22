@@ -6,6 +6,8 @@ import com.pcdd.sonovel.util.FileUtils;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -27,6 +29,7 @@ import java.util.List;
 
 class TxtMergerTest {
 
+    private static final Logger log = LoggerFactory.getLogger(TxtMergerTest.class);
     // static File dir = FileUtil.file("e:/Temp/small_dir");
     static File dir = FileUtil.file("d:/Temp/small_dir");
     static File outputFile = FileUtil.file("e:/Temp/Merge.txt");
@@ -36,7 +39,7 @@ class TxtMergerTest {
     void test01() {
         FileAppender appender = new FileAppender(outputFile, 16, true);
         for (File item : FileUtils.sortFilesByName(dir)) {
-            System.out.println(item.getName());
+            log.info("{}", item.getName());
             appender.append(FileUtil.readUtf8String(item));
         }
         appender.flush();
@@ -47,7 +50,7 @@ class TxtMergerTest {
     void test02() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, StandardCharsets.UTF_8, true))) {
             for (File item : FileUtils.sortFilesByName(dir)) {
-                System.out.println(item.getName());
+                log.info("{}", item.getName());
                 try (BufferedReader reader = new BufferedReader(new FileReader(item, StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -67,7 +70,7 @@ class TxtMergerTest {
         List<File> files = FileUtils.sortFilesByName(dir);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, StandardCharsets.UTF_8, true), 16 * 1024)) {
             for (File item : files) {
-                System.out.println("Processing: " + item.getName());
+                log.info("Processing: {}", item.getName());
                 try (BufferedReader reader = new BufferedReader(new FileReader(item, StandardCharsets.UTF_8), 16 * 1024)) {
                     char[] buffer = new char[16 * 1024]; // 缓冲数组
                     int len;
@@ -88,7 +91,7 @@ class TxtMergerTest {
         Path outputPath = Paths.get(outputFile.getAbsolutePath());
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             for (File item : files) {
-                System.out.println("Processing: " + item.getName());
+                log.info("Processing: {}", item.getName());
                 Files.lines(item.toPath(), StandardCharsets.UTF_8).forEach(line -> {
                     try {
                         writer.write(line);
@@ -109,7 +112,7 @@ class TxtMergerTest {
         List<File> files = FileUtils.sortFilesByName(dir);
         try (FileChannel outChannel = FileChannel.open(Paths.get(outputFile.getAbsolutePath()), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
             for (File file : files) {
-                System.out.println("Processing: " + file.getName());
+                log.info("Processing: {}", file.getName());
                 try (FileChannel inChannel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
                     long size = inChannel.size();
                     MappedByteBuffer buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, size);

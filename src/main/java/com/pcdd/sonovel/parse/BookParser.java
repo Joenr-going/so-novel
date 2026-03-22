@@ -1,13 +1,13 @@
 package com.pcdd.sonovel.parse;
 
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.pcdd.sonovel.context.HttpClientContext;
 import com.pcdd.sonovel.core.CoverUpdater;
 import com.pcdd.sonovel.core.Source;
 import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.model.BookStatus;
 import com.pcdd.sonovel.model.ContentType;
 import com.pcdd.sonovel.model.Rule.Book;
 import com.pcdd.sonovel.util.ChineseConverter;
@@ -18,6 +18,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 
@@ -27,6 +29,7 @@ import java.io.InputStream;
  */
 public class BookParser extends Source {
 
+    private static final Logger log = LoggerFactory.getLogger(BookParser.class);
     private final OkHttpClient httpClient = HttpClientContext.get();
 
     public BookParser(AppConfig config) {
@@ -46,7 +49,7 @@ public class BookParser extends Source {
 
         if (CrawlUtils.hasCf(document)) {
             Assert.isTrue(StrUtil.isNotEmpty(config.getCfBypass()), "🤖 检测到详情页 {} 存在 Cloudflare 真人验证，但未设置 cf-bypass 配置项，故跳过", url);
-            Console.log("🤖 检测到详情页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", url);
+            log.info("🤖 检测到详情页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", url);
             String realHtml = HttpUtil.get("%s/html?url=%s".formatted(this.config.getCfBypass(), url));
             document = Jsoup.parse(realHtml);
         }
@@ -74,7 +77,9 @@ public class BookParser extends Source {
         book.setLastUpdateTime(lastUpdateTime);
         book.setStatus(status);
 
-        return ChineseConverter.convert(book, this.rule.getLanguage(), config.getLanguage());
+        Book converted = ChineseConverter.convert(book, this.rule.getLanguage(), config.getLanguage());
+        converted.setStatusEnum(BookStatus.from(converted.getStatus()));
+        return converted;
     }
 
     /**

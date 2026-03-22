@@ -3,7 +3,6 @@ package com.pcdd.sonovel;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -32,6 +31,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -51,6 +52,7 @@ import java.util.concurrent.TimeUnit;
  */
 class BookSourceQualityTest {
 
+    private static final Logger log = LoggerFactory.getLogger(BookSourceQualityTest.class);
     static final AppConfig APP_CONFIG = AppConfigLoader.APP_CONFIG;
     static final Map<String, List<Book>> ranks = new ConcurrentHashMap<>();
     // 测试排行榜前几名 (0, 20]
@@ -69,7 +71,7 @@ class BookSourceQualityTest {
     }
 
     List<Book> getQiDianRanks(String rankUrl) {
-        Console.log("getQiDianRanks: {}", rankUrl);
+        log.info("getQiDianRanks: {}", rankUrl);
         List<Book> rank = new ArrayList<>();
         Document document = null;
         try (Response resp = OkHttpClientFactory.create()
@@ -82,7 +84,7 @@ class BookSourceQualityTest {
                 .execute()) {
             document = Jsoup.parse(resp.body().string());
         } catch (IOException e) {
-            Console.error(e);
+            log.error("获取起点榜单失败", e);
         }
 
         Elements elements = document.select("#book-img-text > ul > li");
@@ -125,13 +127,14 @@ class BookSourceQualityTest {
         qidianRankInit(map);
 
         String divider = "-".repeat(50);
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        int poolSize = Math.min(map.size(), Math.max(1, Runtime.getRuntime().availableProcessors()));
+        ExecutorService executor = Executors.newFixedThreadPool(poolSize);
 
         try {
             // 遍历榜单
             for (Map.Entry<String, String> kv : map.entrySet()) {
                 executor.execute(() -> {
-                    Console.log("{} {} {}", divider, kv.getKey(), divider);
+                    log.info("{} {} {}", divider, kv.getKey(), divider);
                     Map<Integer, List<SourceQuality>> sourceQualityListMap = new HashMap<>();
 
                     // 遍历书源
@@ -147,9 +150,9 @@ class BookSourceQualityTest {
                 });
             }
         } catch (Exception e) {
-            Console.log(e.getMessage());
+            log.error(e.getMessage());
         } finally {
-            executor.close();
+            executor.shutdown();
             try {
                 if (!executor.awaitTermination(10, TimeUnit.MINUTES)) {
                     executor.shutdownNow();
@@ -168,7 +171,7 @@ class BookSourceQualityTest {
         Rule rule = new Source(id).rule;
 
         String divider = "=".repeat(30);
-        Console.log("{} 测试书源质量 {} | 书源 {} {} ({}) {}",
+        log.info("{} 测试书源质量 {} | 书源 {} {} ({}) {}",
                 divider, rank.getKey(), rule.getId(), rule.getUrl(), rule.getName(), divider);
         APP_CONFIG.setSourceId(id);
         // 需要代理的书源
@@ -193,7 +196,7 @@ class BookSourceQualityTest {
             boolean found = false;
             for (SearchResult r : results) {
                 if (Objects.equals(r.getBookName(), b.getBookName()) && Objects.equals(r.getAuthor(), b.getAuthor())) {
-                    Console.log("书源 {} 已找到《{}》({}) {}\t{}\t{}",
+                    log.info("书源 {} 已找到《{}》({}) {}\t{}\t{}",
                             id, r.getBookName(), r.getAuthor(), rank.getKey(), r.getUrl(), b.getUrl());
                     sq.setUrl(r.getUrl());
                     found = true;
@@ -202,7 +205,7 @@ class BookSourceQualityTest {
                 }
             }
             if (!found) {
-                Console.log("书源 {} 未找到《{}》（{}）{}\t{}",
+                log.info("书源 {} 未找到《{}》（{}）{}\t{}",
                         id, b.getBookName(), b.getAuthor(), rank.getKey(), b.getUrl());
                 notFoundCount++;
             }
@@ -211,14 +214,14 @@ class BookSourceQualityTest {
 
             // 针对搜索限流书源的处理
             int randomInt = RandomUtil.randomInt(500, 1000);
-            Console.log("搜索间隔 {} ms", randomInt);
+            log.info("搜索间隔 {} ms", randomInt);
             try {
                 Thread.sleep(randomInt);
             } catch (InterruptedException e) {
-                Console.error(e);
+                log.error("搜索间隔等待中断", e);
             }
         }
-        Console.log("书源 {} ({})，{}已找到 {} 本，未找到 {} 本\n\n",
+        log.info("书源 {} ({})，{}已找到 {} 本，未找到 {} 本\n\n",
                 rule.getId(), rule.getUrl(), rank.getKey(), foundCount, notFoundCount);
 
         return list;
@@ -226,12 +229,12 @@ class BookSourceQualityTest {
 
     void generateMarkdown(String title, Map<Integer, List<SourceQuality>> map) {
         if (MapUtil.isEmpty(map)) {
-            Console.error("{} sourceQualityListMap 为空", title);
+            log.error("{} sourceQualityListMap 为空", title);
             return;
         }
 
         String fileName = "qidian_rank/%s.md".formatted(title);
-        Console.log("<== generateMarkdown: {}", fileName);
+        log.info("<== generateMarkdown: {}", fileName);
         // 表头
         StringBuilder sourceNameCol = new StringBuilder("|");
         // 分隔线
@@ -277,7 +280,7 @@ class BookSourceQualityTest {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            Console.error(e);
+            log.error("生成 Markdown 失败", e);
         }
     }
 

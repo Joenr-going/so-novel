@@ -3,7 +3,6 @@ package com.pcdd.sonovel.parse;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.lang.ConsoleTable;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ReUtil;
@@ -28,10 +27,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.fusesource.jansi.AnsiRenderer.render;
 
 /**
  * @author pcdd
@@ -39,6 +39,7 @@ import static org.fusesource.jansi.AnsiRenderer.render;
  */
 public class SearchParser extends Source {
 
+    private static final Logger log = LoggerFactory.getLogger(SearchParser.class);
     private static final int TEXT_LIMIT_LENGTH = 30;
     private final OkHttpClient httpClient = HttpClientContext.get();
 
@@ -51,11 +52,11 @@ public class SearchParser extends Source {
         Rule.Search r = this.rule.getSearch();
 
         if (r == null) {
-            Console.log(render("<== 书源 {} 不支持搜索", "yellow"), config.getSourceId());
+            log.warn("<== 书源 {} 不支持搜索", config.getSourceId());
             return Collections.emptyList();
         }
         if (this.rule.isDisabled()) {
-            Console.error(render("<== 书源 {} ({}) 已被禁用", "yellow"), this.rule.getId(), this.rule.getName());
+            log.error("<== 书源 {} ({}) 已被禁用", this.rule.getId(), this.rule.getName());
             return Collections.emptyList();
         }
 
@@ -78,14 +79,13 @@ public class SearchParser extends Source {
 
             if (CrawlUtils.hasCf(document)) {
                 Assert.isTrue(StrUtil.isNotEmpty(config.getCfBypass()), "🤖 检测到搜索页 {} 存在 Cloudflare 真人验证，但未设置 cf-bypass 配置项，故跳过", searchUrl);
-                Console.log("🤖 检测到搜索页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", searchUrl);
+                log.info("🤖 检测到搜索页 {} 存在 Cloudflare 真人验证，正在尝试绕过...", searchUrl);
                 String html = HttpUtil.get("%s/html?url=%s".formatted(this.config.getCfBypass(), searchUrl));
                 document = Jsoup.parse(html);
             }
 
         } catch (Exception e) {
-            Console.error(render("<== 书源 {} ({}) 搜索解析出错: {}", "red"),
-                    this.rule.getId(), this.rule.getName(), e.getMessage());
+            log.error("<== 书源 {} ({}) 搜索解析出错: {}", this.rule.getId(), this.rule.getName(), e.getMessage());
             return Collections.emptyList();
         }
 
@@ -197,7 +197,7 @@ public class SearchParser extends Source {
                 list.add(ChineseConverter.convert(sr, this.rule.getLanguage(), config.getLanguage()));
             }
         } catch (Exception e) {
-            Console.error(e);
+            log.error("搜索结果解析失败", e);
             return Collections.emptyList();
 
         } finally {
@@ -240,7 +240,7 @@ public class SearchParser extends Source {
             consoleTable.addBody(ArrayUtil.toArray(cols, String.class));
         }
 
-        Console.table(consoleTable);
+        log.info("\n{}", consoleTable);
     }
 
     // 辅助方法：只有非空的情况下才添加列
@@ -275,7 +275,7 @@ public class SearchParser extends Source {
                     String.valueOf(sr.getSourceId())
             );
         }
-        Console.table(consoleTable);
+        log.info("\n{}", consoleTable);
     }
 
 }

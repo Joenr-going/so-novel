@@ -3,7 +3,6 @@ package com.pcdd.sonovel;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.StrUtil;
@@ -30,6 +29,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -44,6 +45,7 @@ import java.util.concurrent.Executors;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BookSourceTest {
 
+    private static final Logger log = LoggerFactory.getLogger(BookSourceTest.class);
     static final AppConfig APP_CONFIG = AppConfigLoader.APP_CONFIG;
     static final String DIVIDER = "=".repeat(50);
     String firstChapterUrl;
@@ -56,8 +58,6 @@ class BookSourceTest {
         // 覆盖 config-dev.ini 配置
         // 在此修改要测试的书源
         APP_CONFIG.setActiveRules("main.json");
-        // 扩展名
-        APP_CONFIG.setExtName("txt");
         // 正文语言
         APP_CONFIG.setLanguage(LangType.ZH_CN);
     }
@@ -141,54 +141,54 @@ class BookSourceTest {
     }
 
     public void searchParse(String keyword) {
-        Console.log("\n{} START searchParse {}", DIVIDER, DIVIDER);
+        log.info("\n{} START searchParse {}", DIVIDER, DIVIDER);
         List<SearchResult> list = "proxy-required.json".equals(APP_CONFIG.getActiveRules()) && APP_CONFIG.getSourceId() == 2
                 ? new SearchParserQuanben5(APP_CONFIG).parse(keyword)
                 : new SearchParser(APP_CONFIG).parse(keyword);
         if (CollUtil.isEmpty(list)) {
-            Console.log("\"{}\"搜索结果为空", keyword);
+            log.info("\"{}\"搜索结果为空", keyword);
         }
         if (!list.isEmpty()) {
-            Console.log("点击此 URL 检查首条搜索结果有效性: {}", CollUtil.getFirst(list).getUrl());
+            log.info("点击此 URL 检查首条搜索结果有效性: {}", CollUtil.getFirst(list).getUrl());
         }
         new SearchParser(APP_CONFIG).printSearchResult(list);
-        Console.log("{} END searchParse {}\n", DIVIDER, DIVIDER);
+        log.info("{} END searchParse {}\n", DIVIDER, DIVIDER);
     }
 
     public void bookParse(String bookUrl) {
-        Console.log("\n{} START bookParse {}", DIVIDER, DIVIDER);
+        log.info("\n{} START bookParse {}", DIVIDER, DIVIDER);
         Book book = new BookParser(APP_CONFIG).parse(bookUrl);
         BookContext.set(book);
-        Console.log(JSONUtil.toJsonPrettyStr(book));
-        Console.log("{} END bookParse {}\n", DIVIDER, DIVIDER);
+        log.info(JSONUtil.toJsonPrettyStr(book));
+        log.info("{} END bookParse {}\n", DIVIDER, DIVIDER);
     }
 
     public void tocParse(String bookUrl) {
-        Console.log("\n{} START tocParse {}", DIVIDER, DIVIDER);
+        log.info("\n{} START tocParse {}", DIVIDER, DIVIDER);
         TocParser tocParser = new TocParser(APP_CONFIG);
         List<Chapter> toc = tocParser.parseAll(bookUrl);
         chapters = toc;
-        toc.forEach(System.out::println);
+        toc.forEach(chapter -> log.info("{}", chapter));
         if (CollUtil.isEmpty(toc)) {
-            Console.log("目录为空");
+            log.info("目录为空");
             return;
         }
         // 被 chapterParse() 调用
-        firstChapterUrl = toc.getFirst().getUrl();
-        firstChapterTitle = toc.getFirst().getTitle();
-        Console.log("{} END tocParse {}\n", DIVIDER, DIVIDER);
+        firstChapterUrl = toc.get(0).getUrl();
+        firstChapterTitle = toc.get(0).getTitle();
+        log.info("{} END tocParse {}\n", DIVIDER, DIVIDER);
     }
 
     /**
      * 必须在 tocParse 之后执行，因为需要 firstChapterUrl，测试对象是 @CsvSource 里的链接
      */
     public void chapterParse() {
-        Console.log("\n{} START chapterParse {}", DIVIDER, DIVIDER);
+        log.info("\n{} START chapterParse {}", DIVIDER, DIVIDER);
         if (StrUtil.hasEmpty(firstChapterUrl, firstChapterTitle)) {
-            Console.log("首章链接或章节名为空，不执行 chapterParse");
+            log.info("首章链接或章节名为空，不执行 chapterParse");
             return;
         }
-        Console.log("firstChapterUrl: {}\nfirstChapterTitle: {}", firstChapterUrl, firstChapterTitle);
+        log.info("firstChapterUrl: {}\nfirstChapterTitle: {}", firstChapterUrl, firstChapterTitle);
 
         Chapter build = Chapter.builder()
                 .title(firstChapterTitle)
@@ -197,8 +197,8 @@ class BookSourceTest {
         Chapter chapter = new ChapterParser(APP_CONFIG).parse(build);
         Assert.notNull(chapter, "下载失败，详见 logs");
 
-        Console.log(chapter.getContent());
-        Console.log("{} END chapterParse {}\n", DIVIDER, DIVIDER);
+        log.info(chapter.getContent());
+        log.info("{} END chapterParse {}\n", DIVIDER, DIVIDER);
     }
 
     /**
@@ -206,7 +206,7 @@ class BookSourceTest {
      */
     @SneakyThrows
     public void chapterBatchParse(int start, int end) {
-        Console.log("\n{} START chapterBatchParse {}", DIVIDER, DIVIDER);
+        log.info("\n{} START chapterBatchParse {}", DIVIDER, DIVIDER);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -222,7 +222,7 @@ class BookSourceTest {
                 Chapter afterFiltration = new ChapterRenderer(APP_CONFIG).process(beforeFiltration);
                 Chapter res = ChineseConverter.convert(afterFiltration, source.rule.getLanguage(), APP_CONFIG.getLanguage());
                 if (StrUtil.isAllNotEmpty(res.getTitle(), res.getContent())) {
-                    Console.log("✅ {}", res.getTitle());
+                    log.info("✅ {}", res.getTitle());
                 } else {
                     StringBuilder errMsg = new StringBuilder("❌ %s %s ".formatted(res.getTitle(), res.getUrl()));
                     if (StrUtil.isEmpty(res.getTitle())) {
@@ -231,7 +231,7 @@ class BookSourceTest {
                     if (StrUtil.isEmpty(res.getContent())) {
                         errMsg.append("章节正文为空");
                     }
-                    Console.log(errMsg);
+                    log.info(errMsg.toString());
                 }
 
                 latch.countDown();
@@ -242,8 +242,8 @@ class BookSourceTest {
         threadPool.shutdown();
         stopWatch.stop();
 
-        Console.log("总耗时 {} s", NumberUtil.round(stopWatch.getTotalTimeSeconds(), 2));
-        Console.log("{} END chapterBatchParse {}\n", DIVIDER, DIVIDER);
+        log.info("总耗时 {} s", NumberUtil.round(stopWatch.getTotalTimeSeconds(), 2));
+        log.info("{} END chapterBatchParse {}\n", DIVIDER, DIVIDER);
     }
 
 }

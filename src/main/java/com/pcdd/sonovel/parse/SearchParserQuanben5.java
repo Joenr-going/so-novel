@@ -1,7 +1,6 @@
 package com.pcdd.sonovel.parse;
 
 import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.text.UnicodeUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
@@ -23,6 +22,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import java.util.List;
  */
 public class SearchParserQuanben5 extends Source {
 
+    private static final Logger log = LoggerFactory.getLogger(SearchParserQuanben5.class);
     private final OkHttpClient httpClient = HttpClientContext.get();
 
     public SearchParserQuanben5(AppConfig config) {
@@ -47,8 +49,7 @@ public class SearchParserQuanben5 extends Source {
             Rule.Search ruleSearch = rule.getSearch();
             String js = ResourceUtil.readUtf8Str("quanben5.js");
             Object paramB = JsCaller.callFunction(js, "getParamB", keyword);
-
-            String url = String.format(ruleSearch.getUrl(), keyword, paramB);
+            String url = String.format(ruleSearch.getUrl(), keyword, String.valueOf(paramB));
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader(Header.REFERER.toString(), "https://quanben5.com/search.html")
@@ -71,7 +72,7 @@ public class SearchParserQuanben5 extends Source {
                 return getSearchResults(document);
             }
         } catch (Exception e) {
-            Console.error(e.getMessage());
+            log.error("全本小说网搜索解析失败: {}", e.getMessage());
             return Collections.emptyList();
         }
     }

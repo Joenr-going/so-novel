@@ -2,7 +2,6 @@ package com.pcdd.sonovel.handle;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.pcdd.sonovel.model.Rule.Book;
@@ -10,13 +9,14 @@ import com.pcdd.sonovel.util.FileUtils;
 import io.documentnode.epub4j.domain.*;
 import io.documentnode.epub4j.epub.EpubWriter;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Date;
 import java.util.List;
 
-import static org.fusesource.jansi.AnsiRenderer.render;
 
 /**
  * @author pcdd
@@ -24,13 +24,14 @@ import static org.fusesource.jansi.AnsiRenderer.render;
  */
 public class EpubMergeHandler implements PostProcessingHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(EpubMergeHandler.class);
     public static final String COVER_NAME = "cover.html";
 
     @SneakyThrows
     @Override
     public void handle(Book b, File saveDir) {
         if (FileUtil.isDirEmpty(saveDir)) {
-            Console.error(render("<== 《{}》（{}）下载章节数为 0，取消生成 EPUB", "red"), b.getBookName(), b.getAuthor());
+            log.error("<== 《{}》（{}）下载章节数为 0，取消生成 EPUB", b.getBookName(), b.getAuthor());
             return;
         }
 
@@ -47,7 +48,7 @@ public class EpubMergeHandler implements PostProcessingHandler {
             // 添加封面页
             book.addSection("封面", new Resource(ResourceUtil.readBytes("templates/chapter_cover.html"), COVER_NAME));
         } catch (Exception e) {
-            Console.error(render("EPUB 最新封面 {} 下载失败：{}", "red"), b.getCoverUrl(), e.getMessage());
+            log.error("EPUB 最新封面 {} 下载失败：{}", b.getCoverUrl(), e.getMessage());
         }
         // 不设置会导致 Apple Books 无法使用苹方字体
         meta.setLanguage("zh");

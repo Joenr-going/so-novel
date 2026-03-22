@@ -1,7 +1,6 @@
 package com.pcdd.sonovel.core;
 
 import cn.hutool.core.img.ImgUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
@@ -16,6 +15,8 @@ import lombok.experimental.UtilityClass;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -28,8 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.fusesource.jansi.AnsiRenderer.render;
-
 /**
  * 获取小说最新封面工具类
  *
@@ -39,6 +38,7 @@ import static org.fusesource.jansi.AnsiRenderer.render;
 @UtilityClass
 public class CoverUpdater {
 
+    private final Logger log = LoggerFactory.getLogger(CoverUpdater.class);
     private final int TIMEOUT = 3000;
     private final String DEFAULT_COVER = "https://bookcover.yuewen.com/qdbimg/no-cover";
     private final AppConfig APP_CONFIG = AppConfigLoader.APP_CONFIG;
@@ -47,14 +47,15 @@ public class CoverUpdater {
      * 从不同来源获取最新封面
      */
     public String fetchCover(Book book, String coverUrl) {
-        Console.log("<== 正在获取最新封面地址...");
+        log.info("<== 正在获取最新封面地址...");
         book.setCoverUrl(StrUtil.emptyToDefault(coverUrl, DEFAULT_COVER));
 
         if (StrUtil.isBlank(book.getBookName())) {
             return book.getCoverUrl();
         }
 
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        try {
             List<Callable<String>> tasks = List.of(
                     () -> fetchQidian(book),
                     () -> fetchZongheng(book),
@@ -82,9 +83,10 @@ public class CoverUpdater {
                     .max(Map.Entry.comparingByValue())
                     .map(Map.Entry::getKey)
                     .orElse(book.getCoverUrl());
-
         } catch (Exception e) {
-            Console.error(e, "并行获取封面失败");
+            log.error("并行获取封面失败", e);
+        } finally {
+            executor.shutdown();
         }
 
         return book.getCoverUrl();
@@ -117,7 +119,7 @@ public class CoverUpdater {
                 }
             }
         } catch (Exception e) {
-            Console.error(render("获取起点封面失败: {}", "red"), e.getMessage());
+            log.error("获取起点封面失败: {}", e.getMessage());
         }
         return "";
     }
@@ -152,7 +154,7 @@ public class CoverUpdater {
                 }
             }
         } catch (Exception e) {
-            Console.error(render("获取纵横封面失败: {}", "red"), e.getMessage());
+            log.error("获取纵横封面失败: {}", e.getMessage());
         }
         return "";
     }
@@ -184,7 +186,7 @@ public class CoverUpdater {
                 }
             }
         } catch (Exception e) {
-            Console.error(render("获取七猫封面失败: {}", "red"), e.getMessage());
+            log.error("获取七猫封面失败: {}", e.getMessage());
         }
         return "";
     }

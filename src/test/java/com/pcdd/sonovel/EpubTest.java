@@ -7,10 +7,14 @@ import io.documentnode.epub4j.epub.EpubReader;
 import io.documentnode.epub4j.epub.EpubWriter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class EpubTest {
+
+    private static final Logger log = LoggerFactory.getLogger(EpubTest.class);
 
     @Test
     @Order(1)
@@ -44,24 +48,22 @@ class EpubTest {
         Metadata metadata = book.getMetadata();
 
         // 书名
-        System.out.println(metadata.getTitles().getFirst());
+        log.info("{}", metadata.getTitles().get(0));
         // 作者
-        System.out.println(metadata.getAuthors().getFirst());
+        log.info("{}", metadata.getAuthors().get(0));
         // 简介
-        System.out.println(metadata.getDescriptions().getFirst());
+        log.info("{}", metadata.getDescriptions().get(0));
         // 章节数
-        System.out.println(book.getContents().size());
+        log.info("{}", book.getContents().size());
         // 正文
-        System.out.println(new String(book.getContents().getFirst().getData()));
+        log.info("{}", new String(book.getContents().get(0).getData()));
 
         int i = 0;
         // 遍历目录
         for (TOCReference tocReference : book.getTableOfContents().getTocReferences()) {
             if (i++ == 10) break;
             // 章节名
-            System.out.println(tocReference.getTitle());
-            // 正文
-            // System.out.println(new String(tocReference.getResource().getData()));
+            log.info("{}", tocReference.getTitle());
         }
     }
 
