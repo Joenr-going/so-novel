@@ -6,6 +6,7 @@ import cn.hutool.extra.template.TemplateConfig;
 import cn.hutool.extra.template.TemplateEngine;
 import cn.hutool.extra.template.TemplateUtil;
 import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.model.BookFormat;
 import com.pcdd.sonovel.model.Chapter;
 import lombok.AllArgsConstructor;
 
@@ -29,12 +30,12 @@ public class ChapterRenderer {
     public Chapter process(Chapter chapter) {
         Chapter filtered = new ChapterFilter(config).filter(chapter);
         String content = new ChapterFormatter(config).format(filtered.getContent());
+        BookFormat format = normalizeFormat(config.getExtName());
 
         chapter.setTitle(filtered.getTitle());
-        chapter.setContent(switch (Defaults.EXT_NAME) {
-            case "txt" -> renderTxtFormat(filtered.getTitle(), content);
-            case "epub", "html", "pdf" -> renderTemplateFormat(filtered.getTitle(), content, Defaults.EXT_NAME);
-            default -> content;
+        chapter.setContent(switch (format) {
+            case TXT -> renderTxtFormat(filtered.getTitle(), content);
+            case EPUB, HTML, PDF -> renderTemplateFormat(filtered.getTitle(), content, format.name().toLowerCase());
         });
         return chapter;
     }
@@ -60,6 +61,10 @@ public class ChapterRenderer {
         map.put("title", title);
         map.put("content", content);
         return template.render(map);
+    }
+
+    private BookFormat normalizeFormat(BookFormat format) {
+        return format == null ? Defaults.EXT_NAME : format;
     }
 
 }

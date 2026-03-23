@@ -1,5 +1,6 @@
 package com.pcdd.sonovel.handle;
 
+import com.pcdd.sonovel.model.BookFormat;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -9,13 +10,12 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PostHandlerFactory {
 
-    public PostProcessingHandler getHandler(String extName) {
-        return switch (extName) {
-            case "txt" -> new TxtMergeHandler();
-            case "epub" -> new EpubMergeHandler();
-            case "html" -> new HtmlTocHandler();
-            case "pdf" -> new PdfMergeHandler();
-            default -> throw new IllegalArgumentException("Unsupported format: " + extName);
+    public PostProcessingHandler getHandler(BookFormat format) {
+        return switch (format) {
+            case TXT -> new TxtMergeHandler();
+            case EPUB -> new EpubMergeHandler();
+            case HTML -> new HtmlTocHandler();
+            case PDF -> new PdfMergeHandler();
         };
     }
 }

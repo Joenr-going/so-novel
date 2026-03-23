@@ -58,10 +58,22 @@ Chapter[] part = toc.subList(0, Math.min(20, toc.size())).toArray(new Chapter[0]
 double selectedSeconds = service.download(results.get(0).getUrl(), part);
 ```
 
+### 指定格式下载
+
+```java
+double seconds = service.download(results.get(0).getUrl(), BookFormat.PDF);
+```
+
 ### 以内存流获取 EPUB
 
 ```java
 InputStream epub = service.fetch(results.get(0).getUrl());
+```
+
+### 指定格式以内存流获取
+
+```java
+InputStream stream = service.fetch(results.get(0).getUrl(), BookFormat.TXT);
 ```
 
 ## API 说明
@@ -93,10 +105,28 @@ InputStream epub = service.fetch(results.get(0).getUrl());
 - 返回值
   - InputStream：EPUB 二进制输入流
 
+### fetch(String bookUrl, BookFormat format, Chapter... chapters)
+
+- 参数
+  - bookUrl：书籍详情页 URL
+  - format：目标格式（BookFormat.EPUB/TXT/HTML/PDF）
+  - chapters：可选章节列表，不传表示整本
+- 返回值
+  - InputStream：目标格式二进制输入流
+
 ### download(String bookUrl, Chapter... chapters)
 
 - 参数
   - bookUrl：书籍详情页 URL
+  - chapters：可选章节列表，不传表示整本
+- 返回值
+  - double：总耗时（秒）
+
+### download(String bookUrl, BookFormat format, Chapter... chapters)
+
+- 参数
+  - bookUrl：书籍详情页 URL
+  - format：目标格式（BookFormat.EPUB/TXT/HTML/PDF）
   - chapters：可选章节列表，不传表示整本
 - 返回值
   - double：总耗时（秒）

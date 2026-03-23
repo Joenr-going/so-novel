@@ -3,12 +3,15 @@ package com.pcdd.sonovel.api;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.pcdd.sonovel.context.HttpClientContext;
-import com.pcdd.sonovel.core.EpubFetcher;
-import com.pcdd.sonovel.core.OkHttpClientFactory;
 import com.pcdd.sonovel.core.Crawler;
+import com.pcdd.sonovel.core.Defaults;
+import com.pcdd.sonovel.core.EpubFetcher;
+import com.pcdd.sonovel.core.FormatFetcher;
+import com.pcdd.sonovel.core.OkHttpClientFactory;
 import com.pcdd.sonovel.core.Source;
 import com.pcdd.sonovel.handle.SearchResultsHandler;
 import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.model.BookFormat;
 import com.pcdd.sonovel.model.Chapter;
 import com.pcdd.sonovel.model.Rule;
 import com.pcdd.sonovel.model.SearchResult;
@@ -92,20 +95,44 @@ public class NovelServiceImpl implements NovelService {
 
     @Override
     public InputStream fetch(String bookUrl, Chapter... chapters) {
-        AppConfig cfg = BeanUtil.copyProperties(config, AppConfig.class);
-        cfg.setSourceId(SourceUtils.getRule(bookUrl).getId());
-        HttpClientContext.set(OkHttpClientFactory.create(cfg));
-        if (chapters == null || chapters.length == 0) {
-            return new EpubFetcher(cfg).fetch(bookUrl);
-        }
-        return new EpubFetcher(cfg).fetch(bookUrl, List.of(chapters));
+        return fetch(bookUrl, config.getExtName(), chapters);
     }
 
     @Override
     public double download(String bookUrl, Chapter... chapters) {
-        if (chapters == null || chapters.length == 0) {
-            return new Crawler(config).crawl(bookUrl);
+        return download(bookUrl, config.getExtName(), chapters);
+    }
+
+    @Override
+    public InputStream fetch(String bookUrl, BookFormat format, Chapter... chapters) {
+        AppConfig cfg = prepareConfig(bookUrl, format);
+        HttpClientContext.set(OkHttpClientFactory.create(cfg));
+        if (BookFormat.EPUB.equals(cfg.getExtName())) {
+            if (chapters == null || chapters.length == 0) {
+                return new EpubFetcher(cfg).fetch(bookUrl);
+            }
+            return new EpubFetcher(cfg).fetch(bookUrl, List.of(chapters));
         }
-        return new Crawler(config).crawl(bookUrl, List.of(chapters));
+        if (chapters == null || chapters.length == 0) {
+            return new FormatFetcher(cfg).fetch(bookUrl);
+        }
+        return new FormatFetcher(cfg).fetch(bookUrl, List.of(chapters));
+    }
+
+    @Override
+    public double download(String bookUrl, BookFormat format, Chapter... chapters) {
+        AppConfig cfg = prepareConfig(bookUrl, format);
+        HttpClientContext.set(OkHttpClientFactory.create(cfg));
+        if (chapters == null || chapters.length == 0) {
+            return new Crawler(cfg).crawl(bookUrl);
+        }
+        return new Crawler(cfg).crawl(bookUrl, List.of(chapters));
+    }
+
+    private AppConfig prepareConfig(String bookUrl, BookFormat format) {
+        AppConfig cfg = BeanUtil.copyProperties(config, AppConfig.class);
+        cfg.setSourceId(SourceUtils.getRule(bookUrl).getId());
+        cfg.setExtName(format != null ? format : (cfg.getExtName() != null ? cfg.getExtName() : Defaults.EXT_NAME));
+        return cfg;
     }
 }

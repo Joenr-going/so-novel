@@ -2,6 +2,7 @@ package com.pcdd.sonovel.core;
 
 import cn.hutool.setting.dialect.Props;
 import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.model.BookFormat;
 import com.pcdd.sonovel.util.LangUtil;
 import lombok.experimental.UtilityClass;
 
@@ -50,6 +51,7 @@ public class AppConfigLoader {
         cfg.setMaxRetries(5);
         cfg.setRetryMinInterval(2000);
         cfg.setRetryMaxInterval(4000);
+        cfg.setExtName(Defaults.EXT_NAME);
 
         // [cookie]
         cfg.setQidianCookie("");

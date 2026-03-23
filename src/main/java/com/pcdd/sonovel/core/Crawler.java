@@ -8,6 +8,7 @@ import com.pcdd.sonovel.context.BookContext;
 import com.pcdd.sonovel.context.DownloadContext;
 import com.pcdd.sonovel.handle.CrawlerPostHandler;
 import com.pcdd.sonovel.model.AppConfig;
+import com.pcdd.sonovel.model.BookFormat;
 import com.pcdd.sonovel.model.Chapter;
 import com.pcdd.sonovel.model.Rule.Book;
 import com.pcdd.sonovel.parse.BookParser;
@@ -41,6 +42,7 @@ public class Crawler {
     private final String downloadPath;
     private int digitCount;
     private String bookDir;
+    private BookFormat format;
 
     public Crawler(AppConfig config) {
         this(config, null, Defaults.DOWNLOAD_PATH);
@@ -79,11 +81,12 @@ public class Crawler {
         Book book = new BookParser(config).parse(bookUrl);
         BookContext.set(book);
         DownloadContext.set(downloadPath);
+        format = normalizeFormat(config.getExtName());
 
         try {
             // 下载临时目录名格式：书名 (作者) EXT
             bookDir = FileUtils.sanitizeFileName(
-                    "%s (%s) %s".formatted(book.getBookName(), book.getAuthor(), Defaults.EXT_NAME.toUpperCase()));
+                    "%s (%s) %s".formatted(book.getBookName(), book.getAuthor(), format.name()));
             File dir = FileUtil.mkdir(new File(downloadPath + File.separator + bookDir));
             if (!dir.exists()) {
                 log.error("创建下载目录失败：{}\n1. 检查 config.ini 下载路径是否合法\n2. 尝试以管理员身份运行（部分目录需要管理员权限）", dir);
@@ -117,7 +120,7 @@ public class Crawler {
             }
             log.info("-".repeat(100));
 
-            new CrawlerPostHandler().handle(dir);
+            new CrawlerPostHandler().handle(dir, format);
             stopWatch.stop();
 
             double totalTimeSeconds = stopWatch.getTotalTimeSeconds();
@@ -149,14 +152,17 @@ public class Crawler {
                 ? StrUtil.padPre(chapter.getOrder() + "", digitCount, '0') // 全本下载
                 : String.valueOf(chapter.getOrder()); // 非全本下载
 
-        return parentPath + order + switch (Defaults.EXT_NAME) {
+        return parentPath + order + switch (format) {
             // 下划线用于兼容，不要删除，见 com/pcdd/sonovel/handle/HtmlTocHandler.java:28
-            case "html" -> "_.html";
-            case "txt" -> "_" + FileUtils.sanitizeFileName(chapter.getTitle()) + ".txt";
+            case HTML -> "_.html";
+            case TXT -> "_" + FileUtils.sanitizeFileName(chapter.getTitle()) + ".txt";
             // 转换前的格式为 html
-            case "epub", "pdf" -> "_" + FileUtils.sanitizeFileName(chapter.getTitle()) + ".html";
-            default -> throw new IllegalStateException("暂不支持的下载格式: " + Defaults.EXT_NAME);
+            case EPUB, PDF -> "_" + FileUtils.sanitizeFileName(chapter.getTitle()) + ".html";
         };
+    }
+
+    private BookFormat normalizeFormat(BookFormat format) {
+        return format == null ? Defaults.EXT_NAME : format;
     }
 
 }
