@@ -1,6 +1,5 @@
 package com.pcdd.sonovel.core;
 
-import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
@@ -18,9 +17,6 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,10 +66,7 @@ public class CoverUpdater {
                 String url = future.get();
                 if (isValidCover(url)) {
                     byte[] bytes = HttpDownloader.downloadBytes(url, TIMEOUT);
-                    InputStream imageStream = new ByteArrayInputStream(bytes);
-                    BufferedImage img = ImgUtil.read(imageStream);
-                    map.put(url, img.getWidth() * img.getHeight());
-                    imageStream.close();
+                    map.put(url, bytes.length);
                 }
             }
 

@@ -7,7 +7,6 @@ import lombok.experimental.UtilityClass;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -80,7 +79,7 @@ public class FileUtils {
      * @return 解析后的路径字符串
      */
     public String toAbsolutePath(String path) {
-        return Paths.get(path).toAbsolutePath().toString();
+        return new File(path).getAbsolutePath();
     }
 
 }

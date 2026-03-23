@@ -2,7 +2,6 @@ package com.pcdd.sonovel.handle;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.pcdd.sonovel.context.DownloadContext;
 import com.pcdd.sonovel.core.Defaults;
 import com.pcdd.sonovel.model.Rule.Book;
@@ -14,6 +13,7 @@ import lombok.SneakyThrows;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -106,45 +106,81 @@ public class PdfMergeHandler implements PostProcessingHandler {
                 book.getAuthor());
         OutputStream out = new FileOutputStream(outputPath);
 
-        // 使用 openhtmltopdf 合并 HTML 文件并生成 PDF
-        new PdfRendererBuilder()
-                .useFastMode()
-                .useFont(getFontFile(), "SoNovel")
-                // 10.3 寸屏幕
-                .useDefaultPageSize(7.36f, 9.76f, PdfRendererBuilder.PageSizeUnits.INCHES)
-                .withHtmlContent("""
-                        <html>
-                        <head>
-                          <style>
-                            body {
-                              font-family: 'SoNovel', sans-serif;
-                            }
-                            p {
-                               font-size: 18px;
-                               text-indent: 2em;
-                               line-height: 1.6;
-                             }
-                            /* 关键：每个.chapter 类的 div 都从新页开始 */
-                            .chapter {
-                              page-break-before: always;
-                              break-before: page;
-                            }
-                            /* 避免首章空白页 */
-                            .chapter:first-child {
-                              page-break-before: avoid;
-                              break-before: auto;
-                            }
-                          </style>
-                        </head>
-                        <body>
-                        %s
-                        </body>
-                        </html>
-                        """.formatted(htmlContent), null)
-                .toStream(out)
-                .run();
-        out.close();
+        try {
+            Object builder = createPdfBuilder();
+            invoke(builder, "useFastMode");
+            invoke(builder, "useFont", new Class[]{File.class, String.class}, new Object[]{getFontFile(), "SoNovel"});
+            Object inches = enumValue("com.openhtmltopdf.pdfboxout.PdfRendererBuilder$PageSizeUnits", "INCHES");
+            invoke(builder, "useDefaultPageSize", new Class[]{float.class, float.class, inches.getClass()}, new Object[]{7.36f, 9.76f, inches});
+            invoke(builder, "withHtmlContent", new Class[]{String.class, String.class}, new Object[]{"""
+                    <html>
+                    <head>
+                      <style>
+                        body {
+                          font-family: 'SoNovel', sans-serif;
+                        }
+                        p {
+                           font-size: 18px;
+                           text-indent: 2em;
+                           line-height: 1.6;
+                         }
+                        .chapter {
+                          page-break-before: always;
+                          break-before: page;
+                        }
+                        .chapter:first-child {
+                          page-break-before: avoid;
+                          break-before: auto;
+                        }
+                      </style>
+                    </head>
+                    <body>
+                    %s
+                    </body>
+                    </html>
+                    """.formatted(htmlContent), null});
+            invoke(builder, "toStream", new Class[]{OutputStream.class}, new Object[]{out});
+            invoke(builder, "run");
+        } finally {
+            out.close();
+        }
     }
 
+    private Object createPdfBuilder() {
+        if (PlatformUtils.isAndroid()) {
+            throw new UnsupportedOperationException("Android 环境不支持 PDF 生成");
+        }
+        try {
+            Class<?> cls = Class.forName("com.openhtmltopdf.pdfboxout.PdfRendererBuilder");
+            return cls.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new UnsupportedOperationException("未引入 PDF 依赖（openhtmltopdf-pdfbox），无法生成 PDF", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("初始化 PDF 渲染器失败", e);
+        }
+    }
+
+    private Object enumValue(String enumClassName, String name) {
+        try {
+            Class<?> enumClass = Class.forName(enumClassName);
+            Method valueOf = enumClass.getMethod("valueOf", String.class);
+            return valueOf.invoke(null, name);
+        } catch (Exception e) {
+            throw new IllegalStateException("读取 PDF 枚举失败: " + enumClassName + "." + name, e);
+        }
+    }
+
+    private void invoke(Object target, String methodName) {
+        invoke(target, methodName, new Class[0], new Object[0]);
+    }
+
+    private void invoke(Object target, String methodName, Class<?>[] parameterTypes, Object[] args) {
+        try {
+            Method m = target.getClass().getMethod(methodName, parameterTypes);
+            m.invoke(target, args);
+        } catch (Exception e) {
+            throw new IllegalStateException("调用 PDF 方法失败: " + methodName, e);
+        }
+    }
 
 }

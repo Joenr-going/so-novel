@@ -12,8 +12,7 @@ import com.pcdd.sonovel.util.LangUtil;
 import lombok.experimental.UtilityClass;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
 
 /**
  * @author pcdd
@@ -51,9 +50,7 @@ public class AppConfigLoader {
             return new Setting(defaultPath);
         }
 
-        Path absolutePath = Paths.get(configFilePath).toAbsolutePath();
-
-        return new Setting(absolutePath.toString());
+        return new Setting(new File(configFilePath).getAbsolutePath());
     }
 
     public AppConfig loadConfig() {

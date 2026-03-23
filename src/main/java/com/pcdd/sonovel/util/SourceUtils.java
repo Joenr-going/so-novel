@@ -24,8 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
@@ -151,9 +149,9 @@ public class SourceUtils {
      * 获取激活规则文件路径
      */
     private String getActiveRulesPath() {
-        Path path = Paths.get(APP_CONFIG.getActiveRules());
-        if (path.isAbsolute()) {
-            return path.toString();
+        File f = new File(APP_CONFIG.getActiveRules());
+        if (f.isAbsolute()) {
+            return f.getAbsolutePath();
         }
         return (EnvUtils.isDev() ? RULES_DIR_DEV : RULES_DIR_PROD) + APP_CONFIG.getActiveRules();
     }

@@ -7,6 +7,11 @@
 本项目目的：将原工程拆分为可复用的核心库，便于在 Android/服务端等场景以依赖方式集成。
 移除 CLI/TUI/Web 交互层与打包脚本，保留核心抓取与解析能力；统一 JDK 17 与 Rhino JS 引擎。
 
+## 平台兼容
+
+- Android：已移除 java.desktop/java.awt 相关直接依赖；PDF 生成为可选能力，Android 环境默认不支持
+- PC/服务端：支持完整能力；如需 PDF，请额外引入 openhtmltopdf-pdfbox
+
 ## Maven 依赖
 
 ```xml

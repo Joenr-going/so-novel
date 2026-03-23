@@ -11,7 +11,6 @@ import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.List;
 
 public class FormatFetcher {
@@ -58,7 +57,14 @@ public class FormatFetcher {
 
     private File createTempDir() {
         try {
-            return Files.createTempDirectory("so-novel-fetch-").toFile();
+            File f = File.createTempFile("so-novel-fetch-", "");
+            if (!f.delete()) {
+                throw new IOException("delete temp marker failed");
+            }
+            if (!f.mkdir()) {
+                throw new IOException("mkdir temp dir failed");
+            }
+            return f;
         } catch (IOException e) {
             throw new IllegalStateException("创建临时目录失败", e);
         }
