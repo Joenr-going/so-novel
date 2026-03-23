@@ -1,0 +1,60 @@
+name: Compile Check
+
+on:
+  pull_request:
+    branches: [main,master]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main,master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Check pom.xml version (SemVer 2.0)
+        shell: bash
+        run: |
+          set -euo pipefail
+          head_pom="$GITHUB_WORKSPACE/pom.xml"
+          if [[ ! -f "$head_pom" ]]; then
+            echo "pom.xml not found"
+            exit 1
+          fi
+          version="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version -f "$head_pom" | tail -n 1)"
+          if [[ -z "${version// /}" ]]; then
+            echo "Failed to resolve version"
+            exit 1
+          fi
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "Version must follow SemVer 2.0"
+            echo "got: $version"
+            exit 1
+          fi
+          prerelease=""
+          if [[ "$version" == *-* ]]; then
+            prerelease="${version#*-}"
+            prerelease="${prerelease%%+*}"
+          fi
+          if [[ -n "$prerelease" ]]; then
+            IFS='.' read -r -a parts <<< "$prerelease"
+            for p in "${parts[@]}"; do
+              if [[ "$p" =~ ^[0-9]+$ && "$p" =~ ^0[0-9]+$ ]]; then
+                echo "Numeric prerelease identifiers must not include leading zeros"
+                echo "got: $version"
+                exit 1
+              fi
+            done
+          fi
+
+      - name: Try Compile
+        run: mvn -B -Dmaven.test.skip=true -DskipTests -DskipITs compile
