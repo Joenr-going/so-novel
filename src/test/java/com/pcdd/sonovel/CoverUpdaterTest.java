@@ -19,7 +19,7 @@ class CoverUpdaterTest {
         Book book = new Book();
         book.setBookName("诡秘之主");
         book.setAuthor("爱潜水的乌贼");
-        log.info("{}", CoverUpdater.fetchCover(book, null));
+        System.out.println(CoverUpdater.fetchCover(book, null));
     }
 
     @Test
@@ -27,7 +27,7 @@ class CoverUpdaterTest {
         Book book = new Book();
         book.setBookName("剑来");
         book.setAuthor("烽火戏诸侯");
-        log.info("{}", CoverUpdater.fetchCover(book, null));
+        System.out.println(CoverUpdater.fetchCover(book, null));
     }
 
     @Test
@@ -35,7 +35,7 @@ class CoverUpdaterTest {
         Book book = new Book();
         book.setBookName("盖世神医");
         book.setAuthor("狐颜乱语");
-        log.info("{}", CoverUpdater.fetchCover(book, null));
+        System.out.println(CoverUpdater.fetchCover(book, null));
     }
 
 }

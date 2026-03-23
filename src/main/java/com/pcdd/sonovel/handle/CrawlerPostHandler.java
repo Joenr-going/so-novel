@@ -18,18 +18,22 @@ import java.io.File;
  * Created at 2024/3/17
  */
 public class CrawlerPostHandler {
-    private static final Logger log = LoggerFactory.getLogger(CrawlerPostHandler.class);
+
+    private final AppConfig config;
+    private static final Set<String> EXTENSIONS = Set.of("txt", "epub", "html", "pdf");
 
     @SneakyThrows
     public void handle(File saveDir, BookFormat format) {
         Book book = BookContext.get();
         StringBuilder s = new StringBuilder(StrUtil.format("<== 章节下载完毕《{}》({})，", book.getBookName(), book.getAuthor()));
 
-        s.append("正在生成 ").append(format.name());
-        if (BookFormat.TXT.equals(format)) {
-            s.append(" (%s 编码)".formatted(CharsetUtil.parse(Defaults.TXT_ENCODING)));
+        if (EXTENSIONS.contains(extName.toLowerCase())) {
+            s.append("正在生成 ").append(extName.toUpperCase());
         }
-        log.info(s.append("...").toString());
+        if ("txt".equals(extName)) {
+            s.append(" (%s 编码)".formatted(CharsetUtil.parse(config.getTxtEncoding())));
+        }
+        Console.log(s.append("..."));
 
         // 等待文件系统更新索引
         int attempts = 10;
@@ -40,7 +44,9 @@ public class CrawlerPostHandler {
 
         PostHandlerFactory.getHandler(format).handle(book, saveDir);
 
-        FileUtil.del(saveDir);
+        if (EXTENSIONS.contains(extName.toLowerCase()) && config.getPreserveChapterCache() == 0) {
+            FileUtil.del(saveDir);
+        }
     }
 
 }

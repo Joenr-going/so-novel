@@ -3,6 +3,7 @@ package com.pcdd.sonovel.core;
 import cn.hutool.setting.dialect.Props;
 import com.pcdd.sonovel.model.AppConfig;
 import com.pcdd.sonovel.model.BookFormat;
+import com.pcdd.sonovel.util.FileUtils;
 import com.pcdd.sonovel.util.LangUtil;
 import lombok.experimental.UtilityClass;
 
@@ -27,6 +28,26 @@ public class AppConfigLoader {
      */
     public Props sys() {
         return Props.getProp("application.properties", StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 加载用户属性
+     */
+    public Setting usr() {
+        // 从虚拟机选项 -Dconfig.file 获取用户配置文件路径
+        String configFilePath = System.getProperty("config.file");
+
+        // 若未指定或指定路径不存在，则从默认位置获取
+        if (!FileUtil.exist(configFilePath)) {
+            // 用户配置文件默认路径
+            String defaultPath = resolveConfigFileName();
+            // 若默认路径也不存在，则抛出 FileNotFoundException
+            return new Setting(defaultPath);
+        }
+
+        Path absolutePath = Paths.get(configFilePath).toAbsolutePath();
+
+        return new Setting(absolutePath.toString());
     }
 
     public AppConfig loadConfig() {
@@ -64,4 +85,13 @@ public class AppConfigLoader {
         return cfg;
     }
 
+    // 修复 hutool 空串不能触发默认值的 bug
+    private String getStrOrDefault(Setting setting, String key, String group, String defaultValue) {
+        String value = setting.getByGroup(key, group);
+        return StrUtil.isEmpty(value) ? defaultValue : value;
+    }
+
+    private String resolveConfigFileName() {
+        return FileUtils.toAbsolutePath(EnvUtils.isDev() ? "config-dev.ini" : "config.ini");
+    }
 }
