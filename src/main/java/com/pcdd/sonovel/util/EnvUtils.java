@@ -43,7 +43,7 @@ public class EnvUtils {
      * 判断当前环境是否为开发环境。
      */
     public boolean isDev() {    // 目前先写死 dev ,不然 lib 集成模式下，读取 File(".env") 会有问题
-        return true
+        return true;
     }
 
     /**
