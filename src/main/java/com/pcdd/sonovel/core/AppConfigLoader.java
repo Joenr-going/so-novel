@@ -1,13 +1,19 @@
 package com.pcdd.sonovel.core;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.setting.Setting;
 import cn.hutool.setting.dialect.Props;
 import com.pcdd.sonovel.model.AppConfig;
 import com.pcdd.sonovel.model.BookFormat;
+import com.pcdd.sonovel.util.EnvUtils;
 import com.pcdd.sonovel.util.FileUtils;
 import com.pcdd.sonovel.util.LangUtil;
 import lombok.experimental.UtilityClass;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author pcdd
@@ -73,6 +79,8 @@ public class AppConfigLoader {
         cfg.setRetryMinInterval(2000);
         cfg.setRetryMaxInterval(4000);
         cfg.setExtName(Defaults.EXT_NAME);
+        cfg.setTxtEncoding(Defaults.TXT_ENCODING);
+        cfg.setPreserveChapterCache(0);
 
         // [cookie]
         cfg.setQidianCookie("");

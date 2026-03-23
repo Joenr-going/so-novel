@@ -120,7 +120,7 @@ public class Crawler {
             }
             log.info("-".repeat(100));
 
-            new CrawlerPostHandler().handle(dir, format);
+            new CrawlerPostHandler(config).handle(dir, format);
             stopWatch.stop();
 
             double totalTimeSeconds = stopWatch.getTotalTimeSeconds();

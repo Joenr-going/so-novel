@@ -5,6 +5,7 @@ import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
 import com.pcdd.sonovel.context.BookContext;
 import com.pcdd.sonovel.core.Defaults;
+import com.pcdd.sonovel.model.AppConfig;
 import com.pcdd.sonovel.model.BookFormat;
 import com.pcdd.sonovel.model.Rule.Book;
 import lombok.SneakyThrows;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * @author pcdd
@@ -22,18 +24,23 @@ public class CrawlerPostHandler {
     private final AppConfig config;
     private static final Set<String> EXTENSIONS = Set.of("txt", "epub", "html", "pdf");
 
+    public CrawlerPostHandler(AppConfig config) {
+        this.config = config;
+    }
+
     @SneakyThrows
     public void handle(File saveDir, BookFormat format) {
         Book book = BookContext.get();
         StringBuilder s = new StringBuilder(StrUtil.format("<== 章节下载完毕《{}》({})，", book.getBookName(), book.getAuthor()));
 
-        if (EXTENSIONS.contains(extName.toLowerCase())) {
-            s.append("正在生成 ").append(extName.toUpperCase());
+        if (EXTENSIONS.contains(format.getExtName().toLowerCase())) {
+            s.append("正在生成 ").append(format.getExtName().toUpperCase());
         }
-        if ("txt".equals(extName)) {
-            s.append(" (%s 编码)".formatted(CharsetUtil.parse(config.getTxtEncoding())));
+        if ("txt".equals(format.getExtName())) {
+            String txtEncoding = config == null || StrUtil.isBlank(config.getTxtEncoding()) ? Defaults.TXT_ENCODING : config.getTxtEncoding();
+            s.append(" (%s 编码)".formatted(CharsetUtil.parse(txtEncoding)));
         }
-        Console.log(s.append("..."));
+        LoggerFactory.getLogger(CrawlerPostHandler.class).info(s.append("...").toString());
 
         // 等待文件系统更新索引
         int attempts = 10;
@@ -44,7 +51,8 @@ public class CrawlerPostHandler {
 
         PostHandlerFactory.getHandler(format).handle(book, saveDir);
 
-        if (EXTENSIONS.contains(extName.toLowerCase()) && config.getPreserveChapterCache() == 0) {
+        Integer preserve = config == null ? 0 : config.getPreserveChapterCache();
+        if (EXTENSIONS.contains(format.getExtName().toLowerCase()) && (preserve == null || preserve == 0)) {
             FileUtil.del(saveDir);
         }
     }

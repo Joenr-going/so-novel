@@ -29,6 +29,8 @@ public class AppConfig {
     private Integer retryMinInterval;
     private Integer retryMaxInterval;
     private BookFormat extName;
+    private String txtEncoding;
+    private Integer preserveChapterCache;
 
     // [cookie]
     private String qidianCookie;
