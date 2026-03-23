@@ -4,6 +4,8 @@ import cn.hutool.setting.dialect.Props;
 import lombok.experimental.UtilityClass;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.net.URL;
 
 @UtilityClass
 public class EnvUtils {
@@ -12,7 +14,12 @@ public class EnvUtils {
 
     static {
         try {
-            env = new Props(new File(".env"));
+            URL url = EnvUtils.class.getClassLoader().getResource(".env");
+            if (url != null) {
+                env = new Props(url, StandardCharsets.UTF_8);
+            } else {
+                env = new Props(new File(".env"));
+            }
         } catch (Exception e) {
             env = new Props();
         }

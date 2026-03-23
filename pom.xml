@@ -158,6 +158,11 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
             </resource>
+            <resource>
+                <directory>bundle</directory>
+                <filtering>false</filtering>
+                <targetPath>bundle</targetPath>
+            </resource>
         </resources>
     </build>
 

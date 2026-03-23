@@ -2,6 +2,8 @@ package com.pcdd.sonovel.util;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.lang.ConsoleTable;
 import cn.hutool.core.util.CharsetUtil;
@@ -24,8 +26,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InputStream;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -50,8 +60,7 @@ public class SourceUtils {
     public final String META_LAST_UPDATE_TIME = "meta[property=\"og:novel:update_time\"]";
     public final String META_STATUS = "meta[property=\"og:novel:status\"]";
 
-    private final String RULES_DIR_DEV = "bundle/rules/";
-    private final String RULES_DIR_PROD = "rules/";
+    private final String RULES_DIR = "bundle/rules/";
     private final AppConfig APP_CONFIG = AppConfigLoader.APP_CONFIG;
     private List<Rule> cachedAllRules;
     private List<Rule> cachedActivatedRules;
@@ -141,7 +150,7 @@ public class SourceUtils {
         if (cachedAllRules != null) {
             return cachedAllRules;
         }
-        cachedAllRules = loadRulesFromPath(EnvUtils.isDev() ? RULES_DIR_DEV : RULES_DIR_PROD);
+        cachedAllRules = loadRulesFromPath(RULES_DIR);
         return cachedAllRules;
     }
 
@@ -149,33 +158,131 @@ public class SourceUtils {
      * 获取激活规则文件路径
      */
     private String getActiveRulesPath() {
-        File f = new File(APP_CONFIG.getActiveRules());
-        if (f.isAbsolute()) {
+        String active = APP_CONFIG.getActiveRules();
+        if (StrUtil.isBlank(active)) {
+            return RULES_DIR + "main.json";
+        }
+        File f = new File(active);
+        if (f.isAbsolute() && f.exists()) {
             return f.getAbsolutePath();
         }
-        return (EnvUtils.isDev() ? RULES_DIR_DEV : RULES_DIR_PROD) + APP_CONFIG.getActiveRules();
+        if (active.startsWith(RULES_DIR)) {
+            return active;
+        }
+        return RULES_DIR + active;
     }
 
     /**
      * @param pathname 规则目录路径 or 规则文件路径
      */
     private List<Rule> loadRulesFromPath(String pathname) {
-        File file = new File(pathname);
-        Assert.isTrue(file.exists(), "书源规则文件不存在: {}", file.getAbsolutePath());
+        if (StrUtil.isBlank(pathname)) {
+            return List.of();
+        }
 
-        List<Rule> rules = FileUtil.loopFiles(file, f -> f.getName().endsWith(".json"))
-                .stream()
-                .flatMap(f -> JSONUtil.readJSONArray(f, CharsetUtil.CHARSET_UTF_8)
+        List<Rule> rules;
+        File file = new File(pathname);
+        if (file.exists()) {
+            if (file.isFile()) {
+                rules = JSONUtil.readJSONArray(file, CharsetUtil.CHARSET_UTF_8)
                         .toList(Rule.class)
                         .stream()
-                        .map(SourceUtils::applyDefaultRule))
-                .toList();
+                        .map(SourceUtils::applyDefaultRule)
+                        .toList();
+            } else {
+                rules = FileUtil.loopFiles(file, f -> f.getName().endsWith(".json"))
+                        .stream()
+                        .flatMap(f -> JSONUtil.readJSONArray(f, CharsetUtil.CHARSET_UTF_8)
+                                .toList(Rule.class)
+                                .stream()
+                                .map(SourceUtils::applyDefaultRule))
+                        .toList();
+            }
+        } else if (pathname.endsWith(".json")) {
+            try (InputStream is = ResourceUtil.getStream(pathname)) {
+                Assert.notNull(is, "书源规则资源不存在: {}", pathname);
+                String json = IoUtil.readUtf8(is);
+                rules = JSONUtil.parseArray(json)
+                        .toList(Rule.class)
+                        .stream()
+                        .map(SourceUtils::applyDefaultRule)
+                        .toList();
+            } catch (Exception e) {
+                throw new IllegalStateException("读取书源规则资源失败: " + pathname, e);
+            }
+        } else {
+            Set<String> resources = listResourcesInDir(pathname, ".json");
+            Assert.isTrue(!resources.isEmpty(), "书源规则资源不存在: {}", pathname);
+            rules = resources.stream()
+                    .flatMap(name -> {
+                        try (InputStream is = ResourceUtil.getStream(name)) {
+                            if (is == null) {
+                                return java.util.stream.Stream.empty();
+                            }
+                            String json = IoUtil.readUtf8(is);
+                            return JSONUtil.parseArray(json).toList(Rule.class).stream();
+                        } catch (Exception e) {
+                            throw new IllegalStateException("读取书源规则资源失败: " + name, e);
+                        }
+                    })
+                    .map(SourceUtils::applyDefaultRule)
+                    .toList();
+        }
 
         // 填充自增 ID
         IntStream.range(0, rules.size())
                 .forEach(i -> rules.get(i).setId(i + 1));
 
         return rules;
+    }
+
+    private Set<String> listResourcesInDir(String dir, String suffix) {
+        String normalized = dir.endsWith("/") ? dir : dir + "/";
+        ClassLoader cl = SourceUtils.class.getClassLoader();
+        Set<String> out = new LinkedHashSet<>();
+        try {
+            URL url = cl.getResource(normalized);
+            if (url == null) {
+                url = cl.getResource(dir);
+            }
+            if (url == null) {
+                return out;
+            }
+            String protocol = url.getProtocol();
+            if ("file".equals(protocol)) {
+                File folder = new File(url.toURI());
+                File[] files = folder.listFiles((d, name) -> name.endsWith(suffix));
+                if (files != null) {
+                    for (File f : files) {
+                        out.add(normalized + f.getName());
+                    }
+                }
+                return out;
+            }
+            if ("jar".equals(protocol)) {
+                JarURLConnection conn = (JarURLConnection) url.openConnection();
+                JarFile jar = conn.getJarFile();
+                String prefix = conn.getEntryName();
+                if (prefix == null) {
+                    prefix = normalized;
+                }
+                if (!prefix.endsWith("/")) {
+                    prefix = prefix + "/";
+                }
+                Enumeration<JarEntry> entries = jar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry e = entries.nextElement();
+                    String name = e.getName();
+                    if (!e.isDirectory() && name.startsWith(prefix) && name.endsWith(suffix)) {
+                        out.add(name);
+                    }
+                }
+                return out;
+            }
+            return out;
+        } catch (Exception e) {
+            return out;
+        }
     }
 
     /**
