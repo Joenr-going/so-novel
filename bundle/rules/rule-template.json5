@@ -27,6 +27,7 @@
     "bookName": "",
     // 作者，必填
     "author": "",
+    "coverUrl": "",
     // 类别
     "category": "",
     // 字数

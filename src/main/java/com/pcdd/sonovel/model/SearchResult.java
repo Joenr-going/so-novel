@@ -16,6 +16,7 @@ public class SearchResult {
     private String url;
     private String bookName;
     private String author;
+    private String coverUrl;
     private String intro;
     private String category;
     private String latestChapter;

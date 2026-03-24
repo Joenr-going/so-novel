@@ -16,7 +16,6 @@ import com.pcdd.sonovel.parse.ChapterParser;
 import com.pcdd.sonovel.parse.TocParser;
 import com.pcdd.sonovel.util.FileUtils;
 import com.pcdd.sonovel.util.VirtualThreadLimiter;
-import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +74,6 @@ public class Crawler {
      * @param bookUrl 详情页链接
      * @param toc     章节目录
      */
-    @SneakyThrows
     public double crawl(String bookUrl, List<Chapter> toc) {
         digitCount = String.valueOf(toc.size()).length();
         Book book = new BookParser(config).parse(bookUrl);

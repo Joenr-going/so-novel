@@ -12,6 +12,11 @@ public interface NovelService {
 
     List<Chapter> fetchToc(String bookUrl);
 
+    default int fetchTotalChapters(String bookUrl) {
+        List<Chapter> toc = fetchToc(bookUrl);
+        return toc == null ? 0 : toc.size();
+    }
+
     InputStream fetch(String bookUrl, Chapter... chapters);
 
     double download(String bookUrl, Chapter... chapters);

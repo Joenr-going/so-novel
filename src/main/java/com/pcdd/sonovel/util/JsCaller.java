@@ -18,6 +18,7 @@ public class JsCaller {
     public String call(String jsCode, String input) {
         Context ctx = Context.enter();
         try {
+            ctx.setOptimizationLevel(-1);
             Scriptable scope = ctx.initStandardObjects();
             String scriptString = JS_TEMPLATE.formatted(jsCode);
             ctx.evaluateString(scope, scriptString, "sonovel", 1, null);
@@ -35,6 +36,7 @@ public class JsCaller {
     public Object callFunction(String jsFunctionCode, String functionName, Object... args) {
         Context ctx = Context.enter();
         try {
+            ctx.setOptimizationLevel(-1);
             Scriptable scope = ctx.initStandardObjects();
             ctx.evaluateString(scope, jsFunctionCode, "sonovel", 1, null);
             Object fn = scope.get(functionName, scope);
@@ -50,6 +52,7 @@ public class JsCaller {
     public String eval(String jsCode) {
         Context ctx = Context.enter();
         try {
+            ctx.setOptimizationLevel(-1);
             Scriptable scope = ctx.initStandardObjects();
             Object result = ctx.evaluateString(scope, jsCode, "sonovel", 1, null);
             return Context.toString(result);

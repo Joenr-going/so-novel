@@ -152,11 +152,11 @@ public class SearchParser extends Source {
                         .url(bookUrl)
                         .bookName(book.getBookName())
                         .author(book.getAuthor())
+                        .coverUrl(book.getCoverUrl())
                         .latestChapter(book.getLatestChapter())
                         .lastUpdateTime(book.getLastUpdateTime())
                         .build();
                 list.add(ChineseConverter.convert(sr, this.rule.getLanguage(), config.getLanguage()));
-                Thread.sleep(CrawlUtils.randomInterval(config));
 
                 return list;
             }
@@ -173,6 +173,9 @@ public class SearchParser extends Source {
                 String bookName = JsoupUtils.selectAndInvokeJs(el, r.getBookName());
                 // 以下为非必须属性
                 String author = JsoupUtils.selectAndInvokeJs(el, r.getAuthor());
+                String coverUrl = StrUtil.isNotBlank(r.getCoverUrl())
+                        ? JsoupUtils.selectAndInvokeJs(el, r.getCoverUrl(), ContentType.ATTR_SRC)
+                        : inferCoverUrl(el);
                 String category = JsoupUtils.selectAndInvokeJs(el, r.getCategory());
                 String latestChapter = JsoupUtils.selectAndInvokeJs(el, r.getLatestChapter());
                 String lastUpdateTime = JsoupUtils.selectAndInvokeJs(el, r.getLastUpdateTime());
@@ -187,6 +190,7 @@ public class SearchParser extends Source {
                         .url(href)
                         .bookName(bookName)
                         .author(author)
+                        .coverUrl(coverUrl)
                         .category(category)
                         .latestChapter(latestChapter)
                         .lastUpdateTime(lastUpdateTime)
@@ -207,6 +211,62 @@ public class SearchParser extends Source {
         }
 
         return list;
+    }
+
+    private String inferCoverUrl(Element el) {
+        if (el == null) {
+            return "";
+        }
+
+        Elements imgs = el.select("img");
+        if (imgs.isEmpty()) {
+            return "";
+        }
+
+        for (Element img : imgs) {
+            String url = firstNonBlank(
+                    img.absUrl("data-original"),
+                    img.absUrl("data-src"),
+                    img.absUrl("data-lazy-src"),
+                    img.absUrl("src")
+            );
+            if (StrUtil.isNotBlank(url)) {
+                return url;
+            }
+
+            String srcset = img.attr("srcset");
+            if (StrUtil.isNotBlank(srcset)) {
+                String first = StrUtil.subBefore(srcset, ",", false);
+                String candidate = StrUtil.trim(StrUtil.subBefore(first, " ", false));
+                if (StrUtil.isNotBlank(candidate)) {
+                    return candidate;
+                }
+            }
+
+            url = firstNonBlank(
+                    img.attr("data-original"),
+                    img.attr("data-src"),
+                    img.attr("data-lazy-src"),
+                    img.attr("src")
+            );
+            if (StrUtil.isNotBlank(url)) {
+                return url;
+            }
+        }
+
+        return "";
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String v : values) {
+            if (StrUtil.isNotBlank(v)) {
+                return v;
+            }
+        }
+        return "";
     }
 
     public void printSearchResult(List<SearchResult> results) {

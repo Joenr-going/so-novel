@@ -157,6 +157,8 @@ public class TocParser extends Source {
             executor.execute(() -> {
                 try {
                     parts.put(url, parseTocPage(url, start, end, r));
+                } catch (Exception e) {
+                    parts.put(url, List.of());
                 } finally {
                     latch.countDown();
                 }

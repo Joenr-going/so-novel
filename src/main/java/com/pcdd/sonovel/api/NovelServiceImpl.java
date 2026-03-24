@@ -19,17 +19,24 @@ import com.pcdd.sonovel.parse.SearchParser;
 import com.pcdd.sonovel.parse.SearchParserQuanben5;
 import com.pcdd.sonovel.parse.TocParser;
 import com.pcdd.sonovel.util.SourceUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.io.InputStream;
+import java.io.IOException;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 public class NovelServiceImpl implements NovelService {
 
+    private static final Logger log = LoggerFactory.getLogger(NovelServiceImpl.class);
     private final AppConfig config;
 
     public NovelServiceImpl(AppConfig config) {
@@ -47,6 +54,7 @@ public class NovelServiceImpl implements NovelService {
             return Collections.emptyList();
         }
 
+        ConcurrentLinkedQueue<Throwable> errors = new ConcurrentLinkedQueue<>();
         List<SearchResult> results = Collections.synchronizedList(new ArrayList<>());
         int poolSize = Math.min(rules.size(), Math.max(1, Runtime.getRuntime().availableProcessors()));
         ExecutorService executor = Executors.newFixedThreadPool(poolSize);
@@ -68,7 +76,10 @@ public class NovelServiceImpl implements NovelService {
                     if (CollUtil.isNotEmpty(res)) {
                         results.addAll(res);
                     }
+                } catch (Throwable t) {
+                    errors.add(t);
                 } finally {
+                    HttpClientContext.clear();
                     latch.countDown();
                 }
             });
@@ -82,15 +93,28 @@ public class NovelServiceImpl implements NovelService {
             executor.shutdown();
         }
 
+        if (!errors.isEmpty()) {
+            Throwable first = errors.poll();
+            IllegalStateException ex = new IllegalStateException("search failed", first);
+            for (Throwable t : errors) {
+                ex.addSuppressed(t);
+            }
+            throw ex;
+        }
+
         return config.getSearchFilter() == 1 ? SearchResultsHandler.filterSort(results, keyword) : results;
     }
 
     @Override
     public List<Chapter> fetchToc(String bookUrl) {
         AppConfig cfg = BeanUtil.copyProperties(config, AppConfig.class);
-        cfg.setSourceId(SourceUtils.getRule(bookUrl).getId());
-        HttpClientContext.set(OkHttpClientFactory.create(cfg));
-        return new TocParser(cfg).parseAll(bookUrl);
+        try {
+            cfg.setSourceId(SourceUtils.getRule(bookUrl).getId());
+            HttpClientContext.set(OkHttpClientFactory.create(cfg));
+            return retry(() -> new TocParser(cfg).parseAll(bookUrl), "fetchToc", cfg);
+        } finally {
+            HttpClientContext.clear();
+        }
     }
 
     @Override
@@ -106,27 +130,35 @@ public class NovelServiceImpl implements NovelService {
     @Override
     public InputStream fetch(String bookUrl, BookFormat format, Chapter... chapters) {
         AppConfig cfg = prepareConfig(bookUrl, format);
-        HttpClientContext.set(OkHttpClientFactory.create(cfg));
-        if (BookFormat.EPUB.equals(cfg.getExtName())) {
-            if (chapters == null || chapters.length == 0) {
-                return new EpubFetcher(cfg).fetch(bookUrl);
+        try {
+            HttpClientContext.set(OkHttpClientFactory.create(cfg));
+            if (BookFormat.EPUB.equals(cfg.getExtName())) {
+                if (chapters == null || chapters.length == 0) {
+                    return retry(() -> new EpubFetcher(cfg).fetch(bookUrl), "fetchEpub", cfg);
+                }
+                return retry(() -> new EpubFetcher(cfg).fetch(bookUrl, List.of(chapters)), "fetchEpub", cfg);
             }
-            return new EpubFetcher(cfg).fetch(bookUrl, List.of(chapters));
+            if (chapters == null || chapters.length == 0) {
+                return retry(() -> new FormatFetcher(cfg).fetch(bookUrl), "fetch", cfg);
+            }
+            return retry(() -> new FormatFetcher(cfg).fetch(bookUrl, List.of(chapters)), "fetch", cfg);
+        } finally {
+            HttpClientContext.clear();
         }
-        if (chapters == null || chapters.length == 0) {
-            return new FormatFetcher(cfg).fetch(bookUrl);
-        }
-        return new FormatFetcher(cfg).fetch(bookUrl, List.of(chapters));
     }
 
     @Override
     public double download(String bookUrl, BookFormat format, Chapter... chapters) {
         AppConfig cfg = prepareConfig(bookUrl, format);
-        HttpClientContext.set(OkHttpClientFactory.create(cfg));
-        if (chapters == null || chapters.length == 0) {
-            return new Crawler(cfg).crawl(bookUrl);
+        try {
+            HttpClientContext.set(OkHttpClientFactory.create(cfg));
+            if (chapters == null || chapters.length == 0) {
+                return retry(() -> new Crawler(cfg).crawl(bookUrl), "download", cfg);
+            }
+            return retry(() -> new Crawler(cfg).crawl(bookUrl, List.of(chapters)), "download", cfg);
+        } finally {
+            HttpClientContext.clear();
         }
-        return new Crawler(cfg).crawl(bookUrl, List.of(chapters));
     }
 
     private AppConfig prepareConfig(String bookUrl, BookFormat format) {
@@ -134,5 +166,65 @@ public class NovelServiceImpl implements NovelService {
         cfg.setSourceId(SourceUtils.getRule(bookUrl).getId());
         cfg.setExtName(format != null ? format : (cfg.getExtName() != null ? cfg.getExtName() : Defaults.EXT_NAME));
         return cfg;
+    }
+
+    private <T> T retry(Supplier<T> supplier, String action, AppConfig cfg) {
+        int enabled = cfg.getEnableRetry() == null ? 0 : cfg.getEnableRetry();
+        int maxRetries = cfg.getMaxRetries() == null ? 0 : cfg.getMaxRetries();
+        if (enabled != 1 || maxRetries <= 0) {
+            return supplier.get();
+        }
+        int attempts = Math.max(1, maxRetries);
+        for (int i = 1; i <= attempts; i++) {
+            try {
+                return supplier.get();
+            } catch (Exception e) {
+                if (i >= attempts || !isRetryable(e)) {
+                    throw e;
+                }
+                sleepRetryInterval(cfg);
+                log.debug("{} 重试 {}/{}: {}", action, i, attempts, e.toString());
+            }
+        }
+        return supplier.get();
+    }
+
+    private boolean isRetryable(Throwable t) {
+        Throwable cur = t;
+        while (cur != null) {
+            if (cur instanceof IOException) {
+                return true;
+            }
+            cur = cur.getCause();
+        }
+        return false;
+    }
+
+    private void sleepRetryInterval(AppConfig cfg) {
+        int min = cfg.getRetryMinInterval() == null ? 0 : cfg.getRetryMinInterval();
+        int max = cfg.getRetryMaxInterval() == null ? min : cfg.getRetryMaxInterval();
+        if (max < min) {
+            int tmp = max;
+            max = min;
+            min = tmp;
+        }
+        long sleepMs;
+        if (max <= 0) {
+            sleepMs = 0;
+        } else if (min <= 0) {
+            sleepMs = ThreadLocalRandom.current().nextLong(0, max + 1L);
+        } else if (min == max) {
+            sleepMs = min;
+        } else {
+            sleepMs = ThreadLocalRandom.current().nextLong(min, (long) max + 1L);
+        }
+        if (sleepMs <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(sleepMs);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
