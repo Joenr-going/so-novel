@@ -106,6 +106,52 @@ public class NovelServiceImpl implements NovelService {
     }
 
     @Override
+    public void searchAsync(String keyword, SearchListener listener) {
+        if (keyword == null || keyword.isBlank()) {
+            if (listener != null) listener.onComplete();
+            return;
+        }
+
+        List<Rule> rules = SourceUtils.getActivatedRules();
+        if (rules.isEmpty()) {
+            if (listener != null) listener.onComplete();
+            return;
+        }
+
+        int poolSize = Math.min(rules.size(), Math.max(1, Runtime.getRuntime().availableProcessors()));
+        ExecutorService executor = Executors.newFixedThreadPool(poolSize);
+        java.util.concurrent.atomic.AtomicInteger remaining = new java.util.concurrent.atomic.AtomicInteger(rules.size());
+
+        for (Rule rule : rules) {
+            executor.execute(() -> {
+                try {
+                    if (rule.isDisabled() || rule.getSearch() == null || rule.getSearch().isDisabled()) {
+                        return;
+                    }
+                    AppConfig cfg = BeanUtil.copyProperties(config, AppConfig.class);
+                    cfg.setSourceId(rule.getId());
+                    HttpClientContext.set(OkHttpClientFactory.create(cfg));
+                    Source source = new Source(rule, cfg);
+                    List<SearchResult> res = "proxy-required.json".equals(source.config.getActiveRules()) && source.config.getSourceId() == 2
+                            ? new SearchParserQuanben5(source.config).parse(keyword)
+                            : new SearchParser(source.config).parse(keyword);
+                    if (CollUtil.isNotEmpty(res) && listener != null) {
+                        listener.onResult(config.getSearchFilter() == 1 ? SearchResultsHandler.filterSort(res, keyword) : res);
+                    }
+                } catch (Throwable t) {
+                    if (listener != null) listener.onError(t);
+                } finally {
+                    HttpClientContext.clear();
+                    if (remaining.decrementAndGet() == 0) {
+                        if (listener != null) listener.onComplete();
+                        executor.shutdown();
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
     public List<Chapter> fetchToc(String bookUrl) {
         AppConfig cfg = BeanUtil.copyProperties(config, AppConfig.class);
         try {

@@ -155,6 +155,39 @@ class BookSourceTest {
         log.info("{} END searchParse {}\n", DIVIDER, DIVIDER);
     }
 
+    @org.junit.jupiter.api.Test
+    @DisplayName("Test search async")
+    void testSearchAsync() throws InterruptedException {
+
+        log.info("\n{} START testSearchAsync {}", DIVIDER, DIVIDER);
+        com.pcdd.sonovel.api.NovelService novelService = new com.pcdd.sonovel.api.NovelServiceImpl(APP_CONFIG);
+        CountDownLatch latch = new CountDownLatch(1);
+        
+        novelService.searchAsync("斗罗", new com.pcdd.sonovel.api.SearchListener() {
+            @Override
+            public void onResult(List<SearchResult> results) {
+                log.info("Received async batch of {} results", results.size());
+                if (!results.isEmpty()) {
+                    log.info("First item in async batch: {}", results.get(0).getBookName());
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                log.error("Async search error: {}", e.getMessage());
+            }
+
+            @Override
+            public void onComplete() {
+                log.info("Async search completed");
+                latch.countDown();
+            }
+        });
+        
+        latch.await(30, java.util.concurrent.TimeUnit.SECONDS);
+        log.info("{} END testSearchAsync {}\n", DIVIDER, DIVIDER);
+    }
+
     public void bookParse(String bookUrl) {
         log.info("\n{} START bookParse {}", DIVIDER, DIVIDER);
         Book book = new BookParser(APP_CONFIG).parse(bookUrl);

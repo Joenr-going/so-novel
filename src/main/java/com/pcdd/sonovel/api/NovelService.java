@@ -10,6 +10,11 @@ import java.util.List;
 public interface NovelService {
     List<SearchResult> search(String keyword);
 
+    /**
+     * 异步流式搜索，搜索结果会通过 listener 实时回调
+     */
+    void searchAsync(String keyword, SearchListener listener);
+
     List<Chapter> fetchToc(String bookUrl);
 
     default int fetchTotalChapters(String bookUrl) {
